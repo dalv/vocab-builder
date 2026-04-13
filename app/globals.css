@@ -88,6 +88,33 @@ header p {
 
 .nav::-webkit-scrollbar { display: none; }
 
+.nav-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  transition: opacity 0.2s, width 0.2s, padding 0.2s;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.nav-home-visible {
+  opacity: 1;
+  width: auto;
+  padding: 8px 10px;
+}
+
+.nav-home:hover {
+  color: var(--text);
+}
+
 .nav a {
   display: inline-block;
   padding: 12px 14px;

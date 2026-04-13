@@ -1,24 +1,9 @@
 import Link from "next/link";
+import ActiveNav from "./active-nav";
 
 const LANGUAGES = [
   { slug: "indonesian", label: "Indonesian", subtitle: "Conversational words & phrases for everyday life in Bali" },
   { slug: "mandarin", label: "中文", subtitle: "Essential vocabulary for everyday Mandarin Chinese" },
-];
-
-const NAV_SECTIONS = [
-  { id: "verbs", label: "Verbs" },
-  { id: "adjectives", label: "Adjective Pairs" },
-  { id: "connectors", label: "Connectors" },
-  { id: "questions", label: "Question Words" },
-  { id: "prepositions", label: "Prepositions" },
-  { id: "adverbs", label: "Adverbs" },
-  { id: "particles", label: "Particles" },
-  { id: "nouns", label: "Nouns" },
-  { id: "transactions", label: "Transactions" },
-  { id: "negation", label: "Negation" },
-  { id: "affixes", label: "Affixes" },
-  { id: "fillers", label: "Fillers" },
-  { id: "health", label: "Health" },
 ];
 
 export default async function LanguageLayout({
@@ -49,13 +34,7 @@ export default async function LanguageLayout({
         <p>{current.subtitle}</p>
       </header>
 
-      <nav className="nav">
-        {NAV_SECTIONS.map((s) => (
-          <a key={s.id} href={`#${s.id}`}>
-            {s.label}
-          </a>
-        ))}
-      </nav>
+      <ActiveNav />
 
       {children}
     </>
