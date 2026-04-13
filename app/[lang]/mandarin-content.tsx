@@ -51,6 +51,62 @@ export default function MandarinContent() {
   <p className="section-note">Coming soon — time markers and frequency words.</p>
 </div>
 
+<div className="section" id="particles">
+  <div className="section-header">
+    <h2>Discourse Particles</h2>
+    <span className="count">0 words</span>
+  </div>
+  <p className="section-note">Coming soon — tone and attitude markers.</p>
+</div>
+
+<div className="section" id="nouns">
+  <div className="section-header">
+    <h2>Common Nouns</h2>
+    <span className="count">0 words</span>
+  </div>
+  <p className="section-note">Coming soon — everyday objects, places, and people.</p>
+</div>
+
+<div className="section" id="transactions">
+  <div className="section-header">
+    <h2>Transaction &amp; Situation Phrases</h2>
+    <span className="count">0 phrases</span>
+  </div>
+  <p className="section-note">Coming soon — ready-to-use phrases for daily situations.</p>
+</div>
+
+<div className="section" id="negation">
+  <div className="section-header">
+    <h2>Negation Patterns</h2>
+    <span className="count">0 words</span>
+  </div>
+  <p className="section-note">Coming soon — ways to say no and negate.</p>
+</div>
+
+<div className="section" id="affixes">
+  <div className="section-header">
+    <h2>Common Verb Affixes</h2>
+    <span className="count">0 patterns</span>
+  </div>
+  <p className="section-note">Coming soon — verb modification patterns.</p>
+</div>
+
+<div className="section" id="fillers">
+  <div className="section-header">
+    <h2>Fillers, Reactions &amp; Interjections</h2>
+    <span className="count">0 words</span>
+  </div>
+  <p className="section-note">Coming soon — natural conversational sounds and reactions.</p>
+</div>
+
+<div className="section" id="health">
+  <div className="section-header">
+    <h2>Body &amp; Health</h2>
+    <span className="count">0 words</span>
+  </div>
+  <p className="section-note">Coming soon — body parts, symptoms, and medical vocabulary.</p>
+</div>
+
 <div style={{ textAlign: "center", padding: "40px 16px 20px", color: "var(--text-muted)", fontSize: "13px" }}>
   0 entries total &middot; Mandarin Chinese vocabulary coming soon
 </div>

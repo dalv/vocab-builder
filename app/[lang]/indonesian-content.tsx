@@ -1369,24 +1369,850 @@ export default function IndonesianContent() {
 
 </div>
 
-{/* ==================== EXTRA CATEGORIES ==================== */}
-<div className="extra-section" id="extras">
-  <h2>Suggested Additional Categories</h2>
-  <p style={{ fontSize: "14px", color: "var(--text-muted)", marginBottom: "16px" }}>Based on your life in Bali, these would be the next high-value lists to build:</p>
-  <ul>
-    <li><strong>Discourse particles</strong> — <em>sih, dong, kok, deh, lho, ya, kan, nih</em> — these tiny words carry enormous meaning in casual Indonesian and you'll hear them in every single conversation. This might be the single most impactful category to learn next.</li>
-    <li><strong>Common nouns (Bali life)</strong> — jalan, pantai, warung, villa, kos, motor, helm, hujan, macet, upacara, pura, sampah, listrik, air, tukang — the physical world around you.</li>
-    <li><strong>Transaction phrases</strong> — ordering food, bargaining, asking prices, dealing with laundry/cleaning/villa stuff, getting things fixed, Grab/Gojek interactions.</li>
-    <li><strong>Negation patterns</strong> — nggak, bukan, belum, jangan, tanpa — knowing four ways to say "no" is essential.</li>
-    <li><strong>Common verb prefixes/suffixes</strong> — me-, di-, ber-, -kan, -in — even a loose grasp of these will unlock your ability to understand speech you overhear.</li>
-    <li><strong>Filler words &amp; reactions</strong> — wah, aduh, ya ampun, gitu, gini, emang, masa — the stuff that makes you sound human rather than robotic.</li>
-    <li><strong>Body &amp; health</strong> — useful for pharmacies, clinics, describing how you feel (sakit, pusing, demam, batuk, alergi).</li>
-  </ul>
+
+{/* ==================== DISCOURSE PARTICLES ==================== */}
+<div className="section" id="particles">
+  <div className="section-header">
+    <h2>Discourse Particles</h2>
+    <span className="count">12 words</span>
+  </div>
+  <p className="section-note">These tiny words are the secret sauce of natural Indonesian. They don't translate cleanly into English — they carry tone, attitude, and social nuance. You'll hear them in literally every sentence spoken around you. Learn to feel them more than define them.</p>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sih</span><span className="eng-word">softener / "well…" / mild emphasis</span><span className="note-tag">very common</span></div>
+    <div className="example"><span className="ex-indo">Apa sih?</span><br /><span className="ex-eng">What is it? (slightly annoyed or curious)</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Enak sih, tapi mahal.</span><br /><span className="ex-eng">It's good, sure, but expensive.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">dong</span><span className="eng-word">urging / "come on" / of course</span></div>
+    <div className="example"><span className="ex-indo">Bantu dong!</span><br /><span className="ex-eng">Help me, come on!</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Iya dong.</span><br /><span className="ex-eng">Of course! / Obviously yes.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kok</span><span className="eng-word">surprise / "how come" / mild challenge</span></div>
+    <div className="example"><span className="ex-indo">Kok mahal banget?</span><br /><span className="ex-eng">How come it's so expensive?</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Enak kok.</span><br /><span className="ex-eng">It's good, actually. (reassuring)</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">deh</span><span className="eng-word">concession / "fine" / mild persuasion</span></div>
+    <div className="example"><span className="ex-indo">Iya deh, aku ikut.</span><br /><span className="ex-eng">Fine, I'll come along.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Coba deh.</span><br /><span className="ex-eng">Just try it. (encouraging)</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">lho / loh</span><span className="eng-word">surprise / "wait, what?" / alerting</span></div>
+    <div className="example"><span className="ex-indo">Lho, kamu belum tahu?</span><br /><span className="ex-eng">Wait, you didn't know?</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Loh, kok bisa?</span><br /><span className="ex-eng">Huh, how is that possible?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ya</span><span className="eng-word">right? / okay? / tag question</span><span className="note-tag">very common</span></div>
+    <div className="example"><span className="ex-indo">Kita ketemu jam 3 ya.</span><br /><span className="ex-eng">We'll meet at 3, okay.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Bagus ya tempatnya.</span><br /><span className="ex-eng">The place is nice, isn't it.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kan</span><span className="eng-word">"right?" / seeking agreement / "as you know"</span></div>
+    <div className="example"><span className="ex-indo">Aku kan sudah bilang.</span><br /><span className="ex-eng">I already told you, right. (I did say so)</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Enak kan?</span><br /><span className="ex-eng">It's good, right?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nih</span><span className="eng-word">"here" / drawing attention / this one right here</span></div>
+    <div className="example"><span className="ex-indo">Nih, coba lihat.</span><br /><span className="ex-eng">Here, take a look at this.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Aku capek nih.</span><br /><span className="ex-eng">I'm tired, you know. (right now)</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tuh</span><span className="eng-word">"there" / pointing out / "see?"</span></div>
+    <div className="example"><span className="ex-indo">Tuh kan, aku bilang juga apa.</span><br /><span className="ex-eng">See? I told you so.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Dia tuh selalu telat.</span><br /><span className="ex-eng">That guy, he's always late.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">aja / saja</span><span className="eng-word">"just" / downplaying / simplifying</span><span className="note-tag">very common</span></div>
+    <div className="example"><span className="ex-indo">Di sini aja.</span><br /><span className="ex-eng">Just here is fine.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Santai aja.</span><br /><span className="ex-eng">Just relax. / Take it easy.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">lah</span><span className="eng-word">emphasis / filler / "well then"</span></div>
+    <div className="example"><span className="ex-indo">Ya sudahlah.</span><br /><span className="ex-eng">Oh well. / Let it go then.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Mana lah aku tahu.</span><br /><span className="ex-eng">How would I know!</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nah</span><span className="eng-word">"so" / "right then" / transitioning</span></div>
+    <div className="example"><span className="ex-indo">Nah, itu dia!</span><br /><span className="ex-eng">There it is! / That's exactly it!</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Nah, sekarang kita bisa mulai.</span><br /><span className="ex-eng">Right then, now we can start.</span></div>
+  </div>
+
+</div>
+
+{/* ==================== COMMON NOUNS ==================== */}
+<div className="section" id="nouns">
+  <div className="section-header">
+    <h2>Common Nouns — Bali Life</h2>
+    <span className="count">55 words</span>
+  </div>
+  <p className="section-note">The physical world around you — places, things, people, and the stuff you deal with day to day living in Bali.</p>
+
+  <div className="subsection"><h3>Places &amp; Surroundings</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">jalan</span><span className="eng-word">road / street</span></div>
+    <div className="example"><span className="ex-indo">Jalannya rusak di sini.</span><br /><span className="ex-eng">The road is damaged here.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">gang</span><span className="eng-word">alley / small lane</span></div>
+    <div className="example"><span className="ex-indo">Rumahku di gang kecil.</span><br /><span className="ex-eng">My house is in a small alley.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pantai</span><span className="eng-word">beach</span></div>
+    <div className="example"><span className="ex-indo">Ayo ke pantai.</span><br /><span className="ex-eng">Let's go to the beach.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sawah</span><span className="eng-word">rice field</span></div>
+    <div className="example"><span className="ex-indo">View dari sini sawah semua.</span><br /><span className="ex-eng">The view from here is all rice fields.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pura</span><span className="eng-word">temple (Balinese Hindu)</span></div>
+    <div className="example"><span className="ex-indo">Ada upacara di pura hari ini.</span><br /><span className="ex-eng">There's a ceremony at the temple today.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pasar</span><span className="eng-word">market</span></div>
+    <div className="example"><span className="ex-indo">Aku beli buah di pasar.</span><br /><span className="ex-eng">I bought fruit at the market.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">warung</span><span className="eng-word">small local restaurant / shop</span></div>
+    <div className="example"><span className="ex-indo">Warung ini paling enak.</span><br /><span className="ex-eng">This warung is the best.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">toko</span><span className="eng-word">shop / store</span></div>
+    <div className="example"><span className="ex-indo">Toko itu buka sampai jam 10.</span><br /><span className="ex-eng">That shop is open until 10.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">perempatan</span><span className="eng-word">intersection / crossroads</span></div>
+    <div className="example"><span className="ex-indo">Belok kanan di perempatan.</span><br /><span className="ex-eng">Turn right at the intersection.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Home &amp; Living</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">rumah</span><span className="eng-word">house / home</span></div>
+    <div className="example"><span className="ex-indo">Rumahnya di mana?</span><br /><span className="ex-eng">Where is your house?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">villa</span><span className="eng-word">villa (very common in Bali context)</span></div>
+    <div className="example"><span className="ex-indo">Aku sewa villa per bulan.</span><br /><span className="ex-eng">I rent a villa monthly.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kos / kost</span><span className="eng-word">boarding room / rented room</span></div>
+    <div className="example"><span className="ex-indo">Aku tinggal di kos dekat pantai.</span><br /><span className="ex-eng">I live in a rented room near the beach.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kamar</span><span className="eng-word">room</span></div>
+    <div className="example"><span className="ex-indo">Kamarnya ada AC nggak?</span><br /><span className="ex-eng">Does the room have AC?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kamar mandi</span><span className="eng-word">bathroom</span></div>
+    <div className="example"><span className="ex-indo">Kamar mandinya di sebelah mana?</span><br /><span className="ex-eng">Which side is the bathroom?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">listrik</span><span className="eng-word">electricity</span></div>
+    <div className="example"><span className="ex-indo">Listriknya mati.</span><br /><span className="ex-eng">The electricity is out.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">air</span><span className="eng-word">water</span></div>
+    <div className="example"><span className="ex-indo">Airnya nggak jalan.</span><br /><span className="ex-eng">The water isn't running.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sampah</span><span className="eng-word">trash / garbage</span></div>
+    <div className="example"><span className="ex-indo">Buang sampah di mana?</span><br /><span className="ex-eng">Where do I throw the trash?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kunci</span><span className="eng-word">key / lock</span></div>
+    <div className="example"><span className="ex-indo">Kuncinya ketinggalan di rumah.</span><br /><span className="ex-eng">The key was left at home.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Transport</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">motor</span><span className="eng-word">motorbike / scooter</span></div>
+    <div className="example"><span className="ex-indo">Aku sewa motor dari tetangga.</span><br /><span className="ex-eng">I rent a motorbike from the neighbor.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">mobil</span><span className="eng-word">car</span></div>
+    <div className="example"><span className="ex-indo">Macet banget, banyak mobil.</span><br /><span className="ex-eng">So much traffic, lots of cars.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">helm</span><span className="eng-word">helmet</span></div>
+    <div className="example"><span className="ex-indo">Jangan lupa pakai helm.</span><br /><span className="ex-eng">Don't forget to wear a helmet.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">bensin</span><span className="eng-word">gasoline / fuel</span></div>
+    <div className="example"><span className="ex-indo">Bensinnya hampir habis.</span><br /><span className="ex-eng">The fuel is almost empty.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">macet</span><span className="eng-word">traffic jam / stuck in traffic</span></div>
+    <div className="example"><span className="ex-indo">Maaf telat, macet parah.</span><br /><span className="ex-eng">Sorry I'm late, traffic was terrible.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Weather &amp; Nature</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">hujan</span><span className="eng-word">rain</span></div>
+    <div className="example"><span className="ex-indo">Kayaknya mau hujan.</span><br /><span className="ex-eng">Looks like it's going to rain.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">matahari</span><span className="eng-word">sun</span></div>
+    <div className="example"><span className="ex-indo">Mataharinya panas banget hari ini.</span><br /><span className="ex-eng">The sun is really hot today.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">angin</span><span className="eng-word">wind</span></div>
+    <div className="example"><span className="ex-indo">Anginnya kencang di pantai.</span><br /><span className="ex-eng">The wind is strong at the beach.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ombak</span><span className="eng-word">waves</span></div>
+    <div className="example"><span className="ex-indo">Ombaknya besar hari ini.</span><br /><span className="ex-eng">The waves are big today.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nyamuk</span><span className="eng-word">mosquito</span></div>
+    <div className="example"><span className="ex-indo">Banyak nyamuk malam-malam.</span><br /><span className="ex-eng">Lots of mosquitoes at night.</span></div>
+  </div>
+
+  <div className="subsection"><h3>People</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">orang</span><span className="eng-word">person / people</span></div>
+    <div className="example"><span className="ex-indo">Orangnya baik banget.</span><br /><span className="ex-eng">The people are really nice.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">teman</span><span className="eng-word">friend</span></div>
+    <div className="example"><span className="ex-indo">Dia teman aku dari Canggu.</span><br /><span className="ex-eng">He/she is my friend from Canggu.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tetangga</span><span className="eng-word">neighbor</span></div>
+    <div className="example"><span className="ex-indo">Tetangga aku orang Bali asli.</span><br /><span className="ex-eng">My neighbor is a native Balinese.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tukang</span><span className="eng-word">handyman / worker / "the __ guy"</span></div>
+    <div className="example"><span className="ex-indo">Panggil tukang listrik.</span><br /><span className="ex-eng">Call the electrician.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">bule</span><span className="eng-word">foreigner (Western)</span><span className="note-tag">casual, neutral</span></div>
+    <div className="example"><span className="ex-indo">Banyak bule di Canggu.</span><br /><span className="ex-eng">There are lots of foreigners in Canggu.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Everyday Things</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">uang</span><span className="eng-word">money</span></div>
+    <div className="example"><span className="ex-indo">Aku nggak bawa uang tunai.</span><br /><span className="ex-eng">I didn't bring cash.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">harga</span><span className="eng-word">price</span></div>
+    <div className="example"><span className="ex-indo">Berapa harganya?</span><br /><span className="ex-eng">How much is the price?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">dompet</span><span className="eng-word">wallet</span></div>
+    <div className="example"><span className="ex-indo">Dompet aku ketinggalan.</span><br /><span className="ex-eng">I left my wallet behind.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tas</span><span className="eng-word">bag</span></div>
+    <div className="example"><span className="ex-indo">Taruh di dalam tas aja.</span><br /><span className="ex-eng">Just put it in the bag.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">HP / handphone</span><span className="eng-word">phone / mobile</span></div>
+    <div className="example"><span className="ex-indo">HP-ku lowbat.</span><br /><span className="ex-eng">My phone is low battery.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">baju</span><span className="eng-word">clothes / shirt</span></div>
+    <div className="example"><span className="ex-indo">Baju ini basah karena hujan.</span><br /><span className="ex-eng">These clothes are wet from the rain.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">payung</span><span className="eng-word">umbrella</span></div>
+    <div className="example"><span className="ex-indo">Kamu bawa payung?</span><br /><span className="ex-eng">Did you bring an umbrella?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">obat</span><span className="eng-word">medicine</span></div>
+    <div className="example"><span className="ex-indo">Aku perlu beli obat di apotek.</span><br /><span className="ex-eng">I need to buy medicine at the pharmacy.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Food &amp; Drink Basics</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nasi</span><span className="eng-word">rice (cooked)</span></div>
+    <div className="example"><span className="ex-indo">Nasi goreng satu ya.</span><br /><span className="ex-eng">One fried rice, please.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">mie / mi</span><span className="eng-word">noodles</span></div>
+    <div className="example"><span className="ex-indo">Mie goreng tanpa telur.</span><br /><span className="ex-eng">Fried noodles without egg.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ayam</span><span className="eng-word">chicken</span></div>
+    <div className="example"><span className="ex-indo">Aku mau nasi sama ayam.</span><br /><span className="ex-eng">I want rice with chicken.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">telur</span><span className="eng-word">egg</span></div>
+    <div className="example"><span className="ex-indo">Tambah telur, ya.</span><br /><span className="ex-eng">Add an egg, please.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sayur</span><span className="eng-word">vegetables</span></div>
+    <div className="example"><span className="ex-indo">Ada sayur apa hari ini?</span><br /><span className="ex-eng">What vegetables are there today?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">buah</span><span className="eng-word">fruit</span></div>
+    <div className="example"><span className="ex-indo">Buah mangga lagi musim.</span><br /><span className="ex-eng">Mangoes are in season.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">gula</span><span className="eng-word">sugar</span></div>
+    <div className="example"><span className="ex-indo">Tanpa gula ya.</span><br /><span className="ex-eng">Without sugar, please.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">es</span><span className="eng-word">ice</span></div>
+    <div className="example"><span className="ex-indo">Es kopi satu.</span><br /><span className="ex-eng">One iced coffee.</span></div>
+  </div>
+
+</div>
+
+{/* ==================== TRANSACTION PHRASES ==================== */}
+<div className="section" id="transactions">
+  <div className="section-header">
+    <h2>Transaction &amp; Situation Phrases</h2>
+    <span className="count">30 phrases</span>
+  </div>
+  <p className="section-note">Complete phrases you can use as-is in daily situations — ordering, paying, getting around, and dealing with villa/household stuff.</p>
+
+  <div className="subsection"><h3>Ordering Food &amp; Drinks</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Pesan [X] satu.</span><span className="eng-word">I'll order one [X].</span></div>
+    <div className="example"><span className="ex-indo">Pesan nasi campur satu.</span><br /><span className="ex-eng">I'll have one mixed rice.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Minta [X] ya.</span><span className="eng-word">Can I have [X], please.</span></div>
+    <div className="example"><span className="ex-indo">Minta air putih ya.</span><br /><span className="ex-eng">Can I have plain water, please.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Tambah [X].</span><span className="eng-word">Add [X]. / Extra [X].</span></div>
+    <div className="example"><span className="ex-indo">Tambah nasi bisa?</span><br /><span className="ex-eng">Can I get extra rice?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Tanpa [X] ya.</span><span className="eng-word">Without [X], please.</span></div>
+    <div className="example"><span className="ex-indo">Tanpa sambal ya.</span><br /><span className="ex-eng">Without chili sauce, please.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Nggak pedas ya.</span><span className="eng-word">Not spicy, please.</span></div>
+    <div className="example"><span className="ex-indo">Bisa nggak pedas? Sedikit aja.</span><br /><span className="ex-eng">Can it be not spicy? Just a little.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Sudah, makasih.</span><span className="eng-word">That's all, thanks.</span></div>
+    <div className="example"><span className="ex-indo">Sudah cukup, makasih ya.</span><br /><span className="ex-eng">That's enough, thanks.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Paying &amp; Prices</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Berapa totalnya?</span><span className="eng-word">How much is the total?</span></div>
+    <div className="example"><span className="ex-indo">Berapa totalnya, Mas?</span><br /><span className="ex-eng">How much is the total, sir?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Bisa bayar pakai [X]?</span><span className="eng-word">Can I pay with [X]?</span></div>
+    <div className="example"><span className="ex-indo">Bisa bayar pakai kartu?</span><br /><span className="ex-eng">Can I pay with a card?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Bisa transfer?</span><span className="eng-word">Can I do a bank transfer?</span></div>
+    <div className="example"><span className="ex-indo">Nggak bawa cash. Bisa transfer?</span><br /><span className="ex-eng">I don't have cash. Can I transfer?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Ada diskon?</span><span className="eng-word">Is there a discount?</span></div>
+    <div className="example"><span className="ex-indo">Kalau sewa sebulan, ada diskon?</span><br /><span className="ex-eng">If I rent for a month, is there a discount?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Bisa kurang?</span><span className="eng-word">Can you lower the price?</span></div>
+    <div className="example"><span className="ex-indo">Bisa kurang sedikit nggak?</span><br /><span className="ex-eng">Can you lower it a little?</span></div>
+  </div>
+
+  <div className="subsection"><h3>Getting Around</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Ke [X] berapa?</span><span className="eng-word">How much to [X]?</span></div>
+    <div className="example"><span className="ex-indo">Ke Ubud berapa, Pak?</span><br /><span className="ex-eng">How much to Ubud, sir?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Berapa lama ke [X]?</span><span className="eng-word">How long to get to [X]?</span></div>
+    <div className="example"><span className="ex-indo">Berapa lama ke bandara dari sini?</span><br /><span className="ex-eng">How long to the airport from here?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Berhenti di sini aja.</span><span className="eng-word">Stop here is fine.</span></div>
+    <div className="example"><span className="ex-indo">Mas, berhenti di sini aja ya.</span><br /><span className="ex-eng">Sir, just stop here, okay.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Lewat mana yang paling cepat?</span><span className="eng-word">Which way is fastest?</span></div>
+    <div className="example"><span className="ex-indo">Ke Sanur lewat mana yang paling cepat?</span><br /><span className="ex-eng">What's the fastest way to Sanur?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Lurus terus.</span><span className="eng-word">Go straight ahead.</span></div>
+    <div className="example"><span className="ex-indo">Lurus terus, nanti belok kiri.</span><br /><span className="ex-eng">Go straight, then turn left.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Villa &amp; Household</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">AC-nya nggak dingin.</span><span className="eng-word">The AC isn't cold.</span></div>
+    <div className="example"><span className="ex-indo">Maaf, AC-nya nggak dingin, bisa dicek?</span><br /><span className="ex-eng">Sorry, the AC isn't cold, can it be checked?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">WiFi-nya mati.</span><span className="eng-word">The WiFi is down.</span></div>
+    <div className="example"><span className="ex-indo">WiFi-nya mati dari tadi pagi.</span><br /><span className="ex-eng">The WiFi has been down since this morning.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Airnya nggak keluar.</span><span className="eng-word">The water isn't coming out.</span></div>
+    <div className="example"><span className="ex-indo">Air di kamar mandi nggak keluar.</span><br /><span className="ex-eng">The water in the bathroom isn't coming out.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Bisa tolong perbaiki?</span><span className="eng-word">Can you please fix it?</span></div>
+    <div className="example"><span className="ex-indo">Pintunya rusak, bisa tolong perbaiki?</span><br /><span className="ex-eng">The door is broken, can you please fix it?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Kapan bisa selesai?</span><span className="eng-word">When can it be done?</span></div>
+    <div className="example"><span className="ex-indo">Kalau diperbaiki, kapan bisa selesai?</span><br /><span className="ex-eng">If it's fixed, when can it be done?</span></div>
+  </div>
+
+  <div className="subsection"><h3>Grab / Gojek &amp; Delivery</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Saya di depan [X].</span><span className="eng-word">I'm in front of [X].</span></div>
+    <div className="example"><span className="ex-indo">Saya di depan minimarket.</span><br /><span className="ex-eng">I'm in front of the minimarket.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Sudah sampai?</span><span className="eng-word">Have you arrived?</span></div>
+    <div className="example"><span className="ex-indo">Mas, sudah sampai belum?</span><br /><span className="ex-eng">Sir, have you arrived yet?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Bisa jemput di [X]?</span><span className="eng-word">Can you pick me up at [X]?</span></div>
+    <div className="example"><span className="ex-indo">Bisa jemput di gang sebelah?</span><br /><span className="ex-eng">Can you pick me up at the alley next door?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">Titip di depan pintu ya.</span><span className="eng-word">Leave it at the door, please.</span></div>
+    <div className="example"><span className="ex-indo">Nggak usah ketuk, titip di depan pintu aja ya.</span><br /><span className="ex-eng">No need to knock, just leave it at the door.</span></div>
+  </div>
+
+</div>
+
+{/* ==================== NEGATION ==================== */}
+<div className="section" id="negation">
+  <div className="section-header">
+    <h2>Negation Patterns</h2>
+    <span className="count">8 words</span>
+  </div>
+  <p className="section-note">Indonesian has several different ways to say "no" and each one works differently. Getting these right is critical — using the wrong negation word is one of the most common mistakes.</p>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nggak / tidak</span><span className="eng-word">not (negates verbs &amp; adjectives)</span><span className="note-tag">most common</span></div>
+    <div className="example"><span className="ex-indo">Aku nggak mau.</span><br /><span className="ex-eng">I don't want to.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Nggak enak.</span><br /><span className="ex-eng">Not tasty. / Doesn't feel good.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">bukan</span><span className="eng-word">not (negates nouns — "it's not a…")</span></div>
+    <div className="example"><span className="ex-indo">Ini bukan punya aku.</span><br /><span className="ex-eng">This isn't mine. (not my possession)</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Dia bukan orang Bali.</span><br /><span className="ex-eng">He's not Balinese.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">belum</span><span className="eng-word">not yet</span></div>
+    <div className="example"><span className="ex-indo">Belum siap.</span><br /><span className="ex-eng">Not ready yet.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Sudah makan? — Belum.</span><br /><span className="ex-eng">Have you eaten? — Not yet.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">jangan</span><span className="eng-word">don't (prohibition / instruction)</span></div>
+    <div className="example"><span className="ex-indo">Jangan lupa!</span><br /><span className="ex-eng">Don't forget!</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Jangan parkir di sini.</span><br /><span className="ex-eng">Don't park here.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tanpa</span><span className="eng-word">without</span></div>
+    <div className="example"><span className="ex-indo">Kopi tanpa gula.</span><br /><span className="ex-eng">Coffee without sugar.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nggak pernah</span><span className="eng-word">never</span></div>
+    <div className="example"><span className="ex-indo">Aku nggak pernah ke Lombok.</span><br /><span className="ex-eng">I've never been to Lombok.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nggak ada</span><span className="eng-word">there isn't / don't have</span></div>
+    <div className="example"><span className="ex-indo">Maaf, nggak ada stok.</span><br /><span className="ex-eng">Sorry, it's out of stock.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nggak usah</span><span className="eng-word">no need to / don't bother</span></div>
+    <div className="example"><span className="ex-indo">Nggak usah antar, aku bisa sendiri.</span><br /><span className="ex-eng">No need to drop me off, I can manage.</span></div>
+  </div>
+
+</div>
+
+{/* ==================== VERB AFFIXES ==================== */}
+<div className="section" id="affixes">
+  <div className="section-header">
+    <h2>Common Verb Affixes</h2>
+    <span className="count">6 patterns</span>
+  </div>
+  <p className="section-note">You don't need to master these now, but recognizing them will help you understand words you overhear. In casual speech, the me- prefix is almost always dropped — but knowing it exists helps you recognize formal/written forms and search a dictionary.</p>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">me- (prefix)</span><span className="eng-word">active voice / "doing" — dropped in casual speech</span></div>
+    <div className="example"><span className="ex-indo">menulis → nulis (casual)</span><br /><span className="ex-eng">to write → "Aku lagi nulis." = I'm writing.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">membeli → beli / mbeli</span><br /><span className="ex-eng">to buy → "Aku beli di pasar." = I bought it at the market.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">di- (prefix)</span><span className="eng-word">passive voice / "being done to"</span><span className="note-tag">very common</span></div>
+    <div className="example"><span className="ex-indo">Motornya lagi diperbaiki.</span><br /><span className="ex-eng">The motorbike is being fixed.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Pesanannya sudah dikirim.</span><br /><span className="ex-eng">The order has already been sent.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ber- (prefix)</span><span className="eng-word">having / doing (intransitive) — states &amp; activities</span></div>
+    <div className="example"><span className="ex-indo">Dia bisa berbahasa Indonesia.</span><br /><span className="ex-eng">She can speak Indonesian.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Aku mau belajar berenang.</span><br /><span className="ex-eng">I want to learn to swim.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">-kan (suffix)</span><span className="eng-word">do something for someone / cause something</span></div>
+    <div className="example"><span className="ex-indo">Tolong buatkan kopi.</span><br /><span className="ex-eng">Please make (me) a coffee.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Carikan yang murah ya.</span><br /><span className="ex-eng">Find me a cheap one, okay.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">-in (suffix)</span><span className="eng-word">same as -kan but casual / spoken</span><span className="note-tag">casual</span></div>
+    <div className="example"><span className="ex-indo">Ambilin dong.</span><br /><span className="ex-eng">Get it for me, will you.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Bantuin aku dong.</span><br /><span className="ex-eng">Help me out, come on.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ke- -an (circumfix)</span><span className="eng-word">experiencing something (often unpleasant/unintentional)</span></div>
+    <div className="example"><span className="ex-indo">Aku kehujanan.</span><br /><span className="ex-eng">I got caught in the rain.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Dia ketiduran di sofa.</span><br /><span className="ex-eng">He fell asleep (accidentally) on the sofa.</span></div>
+  </div>
+
+</div>
+
+{/* ==================== FILLERS & REACTIONS ==================== */}
+<div className="section" id="fillers">
+  <div className="section-header">
+    <h2>Fillers, Reactions &amp; Interjections</h2>
+    <span className="count">18 words</span>
+  </div>
+  <p className="section-note">The stuff that makes you sound like a real human instead of a textbook. Drop these into conversation and people will immediately feel more comfortable speaking Indonesian with you.</p>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">wah</span><span className="eng-word">wow / oh (impressed or surprised)</span></div>
+    <div className="example"><span className="ex-indo">Wah, bagus banget!</span><br /><span className="ex-eng">Wow, so nice!</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">aduh</span><span className="eng-word">ouch / oh no / ugh</span></div>
+    <div className="example"><span className="ex-indo">Aduh, aku lupa.</span><br /><span className="ex-eng">Oh no, I forgot.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ya ampun</span><span className="eng-word">oh my god / good grief</span></div>
+    <div className="example"><span className="ex-indo">Ya ampun, mahal banget!</span><br /><span className="ex-eng">Oh my god, so expensive!</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">astaga</span><span className="eng-word">oh my / good heavens</span></div>
+    <div className="example"><span className="ex-indo">Astaga, aku salah jalan.</span><br /><span className="ex-eng">Oh my, I took the wrong road.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">gitu / begitu</span><span className="eng-word">like that / so / I see</span><span className="note-tag">very common</span></div>
+    <div className="example"><span className="ex-indo">Oh gitu. Oke oke.</span><br /><span className="ex-eng">Oh, I see. Okay okay.</span></div>
+    <div className="example" style={{ marginTop: "4px" }}><span className="ex-indo">Caranya gitu.</span><br /><span className="ex-eng">That's how you do it.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">gini / begini</span><span className="eng-word">like this</span></div>
+    <div className="example"><span className="ex-indo">Jadi gini ceritanya…</span><br /><span className="ex-eng">So here's the story… / So basically…</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">emang / memang</span><span className="eng-word">indeed / that's just how it is</span></div>
+    <div className="example"><span className="ex-indo">Emang gitu di Bali.</span><br /><span className="ex-eng">That's just how it is in Bali.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">masa / masa sih</span><span className="eng-word">no way / seriously? / really?</span></div>
+    <div className="example"><span className="ex-indo">Masa sih? Aku nggak percaya.</span><br /><span className="ex-eng">No way, really? I don't believe it.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">serius?</span><span className="eng-word">seriously?</span></div>
+    <div className="example"><span className="ex-indo">Serius? Kapan?</span><br /><span className="ex-eng">Seriously? When?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">beneran?</span><span className="eng-word">for real? / really?</span><span className="note-tag">casual</span></div>
+    <div className="example"><span className="ex-indo">Beneran nih? Nggak bohong?</span><br /><span className="ex-eng">For real? Not lying?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ya sudah / yasudah / yaudah</span><span className="eng-word">oh well / okay then / never mind</span><span className="note-tag">very common</span></div>
+    <div className="example"><span className="ex-indo">Yaudah, nggak apa-apa.</span><br /><span className="ex-eng">Oh well, it's fine / no worries.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">nggak apa-apa</span><span className="eng-word">it's okay / no problem / never mind</span></div>
+    <div className="example"><span className="ex-indo">Maaf ya. — Nggak apa-apa.</span><br /><span className="ex-eng">Sorry. — No problem.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ayo / ayuk</span><span className="eng-word">let's go / come on</span></div>
+    <div className="example"><span className="ex-indo">Ayo makan!</span><br /><span className="ex-eng">Let's eat!</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">hah?</span><span className="eng-word">huh? / what? (didn't hear)</span></div>
+    <div className="example"><span className="ex-indo">Hah? Bilang apa tadi?</span><br /><span className="ex-eng">Huh? What did you say?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">iya iya</span><span className="eng-word">yeah yeah / okay okay</span></div>
+    <div className="example"><span className="ex-indo">Iya iya, aku ngerti.</span><br /><span className="ex-eng">Yeah yeah, I understand.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">hmm / mmm</span><span className="eng-word">(thinking) / (acknowledging)</span></div>
+    <div className="example"><span className="ex-indo">Hmm, gimana ya…</span><br /><span className="ex-eng">Hmm, how do I put it…</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">oke / okeh</span><span className="eng-word">okay</span></div>
+    <div className="example"><span className="ex-indo">Oke, siap!</span><br /><span className="ex-eng">Okay, ready! / Okay, got it!</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">siap</span><span className="eng-word">ready / got it / roger that</span></div>
+    <div className="example"><span className="ex-indo">Siap, Bos!</span><br /><span className="ex-eng">Got it, Boss! (common casual reply)</span></div>
+  </div>
+
+</div>
+
+{/* ==================== BODY & HEALTH ==================== */}
+<div className="section" id="health">
+  <div className="section-header">
+    <h2>Body &amp; Health</h2>
+    <span className="count">25 words</span>
+  </div>
+  <p className="section-note">Essential for pharmacies, clinics, and describing how you feel — stuff that really matters when you're not feeling great in a tropical climate.</p>
+
+  <div className="subsection"><h3>Body Parts</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kepala</span><span className="eng-word">head</span></div>
+    <div className="example"><span className="ex-indo">Kepala aku pusing.</span><br /><span className="ex-eng">My head is dizzy.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">perut</span><span className="eng-word">stomach / belly</span></div>
+    <div className="example"><span className="ex-indo">Perut aku sakit.</span><br /><span className="ex-eng">My stomach hurts.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">punggung</span><span className="eng-word">back (body)</span></div>
+    <div className="example"><span className="ex-indo">Punggung aku pegal.</span><br /><span className="ex-eng">My back is sore/stiff.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tangan</span><span className="eng-word">hand / arm</span></div>
+    <div className="example"><span className="ex-indo">Tangan aku kena luka.</span><br /><span className="ex-eng">My hand got a wound.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kaki</span><span className="eng-word">foot / leg</span></div>
+    <div className="example"><span className="ex-indo">Kaki aku bengkak.</span><br /><span className="ex-eng">My foot/leg is swollen.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">mata</span><span className="eng-word">eye</span></div>
+    <div className="example"><span className="ex-indo">Mata aku merah.</span><br /><span className="ex-eng">My eyes are red.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">kulit</span><span className="eng-word">skin</span></div>
+    <div className="example"><span className="ex-indo">Kulit aku gatal.</span><br /><span className="ex-eng">My skin is itchy.</span></div>
+  </div>
+
+  <div className="subsection"><h3>Symptoms &amp; Conditions</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sakit</span><span className="eng-word">sick / painful / hurts</span></div>
+    <div className="example"><span className="ex-indo">Aku sakit dari kemarin.</span><br /><span className="ex-eng">I've been sick since yesterday.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">demam</span><span className="eng-word">fever</span></div>
+    <div className="example"><span className="ex-indo">Aku demam tinggi.</span><br /><span className="ex-eng">I have a high fever.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pusing</span><span className="eng-word">dizzy / headache</span></div>
+    <div className="example"><span className="ex-indo">Aku pusing, mungkin kurang minum.</span><br /><span className="ex-eng">I'm dizzy, maybe dehydrated.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">mual</span><span className="eng-word">nauseous</span></div>
+    <div className="example"><span className="ex-indo">Aku mual dari tadi.</span><br /><span className="ex-eng">I've been nauseous since earlier.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">batuk</span><span className="eng-word">cough</span></div>
+    <div className="example"><span className="ex-indo">Aku batuk sudah seminggu.</span><br /><span className="ex-eng">I've been coughing for a week.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pilek</span><span className="eng-word">runny nose / cold</span></div>
+    <div className="example"><span className="ex-indo">Aku pilek, butuh tisu.</span><br /><span className="ex-eng">I have a runny nose, need tissues.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">diare</span><span className="eng-word">diarrhea</span></div>
+    <div className="example"><span className="ex-indo">Aku diare, kayaknya salah makan.</span><br /><span className="ex-eng">I have diarrhea, I think I ate something bad.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">alergi</span><span className="eng-word">allergy / allergic</span></div>
+    <div className="example"><span className="ex-indo">Aku alergi kacang.</span><br /><span className="ex-eng">I'm allergic to nuts.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">gatal</span><span className="eng-word">itchy</span></div>
+    <div className="example"><span className="ex-indo">Digigit nyamuk, gatal banget.</span><br /><span className="ex-eng">Bitten by a mosquito, so itchy.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">luka</span><span className="eng-word">wound / injury</span></div>
+    <div className="example"><span className="ex-indo">Ada luka kecil di kaki.</span><br /><span className="ex-eng">There's a small wound on my leg.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">bengkak</span><span className="eng-word">swollen</span></div>
+    <div className="example"><span className="ex-indo">Lututnya bengkak.</span><br /><span className="ex-eng">The knee is swollen.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pegal</span><span className="eng-word">sore / achy / stiff (muscles)</span></div>
+    <div className="example"><span className="ex-indo">Badan pegal semua habis latihan.</span><br /><span className="ex-eng">My whole body is sore after training.</span></div>
+  </div>
+
+  <div className="subsection"><h3>At the Pharmacy / Clinic</h3></div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">apotek</span><span className="eng-word">pharmacy</span></div>
+    <div className="example"><span className="ex-indo">Ada apotek dekat sini?</span><br /><span className="ex-eng">Is there a pharmacy near here?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">dokter</span><span className="eng-word">doctor</span></div>
+    <div className="example"><span className="ex-indo">Aku perlu ke dokter.</span><br /><span className="ex-eng">I need to see a doctor.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">obat</span><span className="eng-word">medicine / medication</span></div>
+    <div className="example"><span className="ex-indo">Ada obat untuk sakit kepala?</span><br /><span className="ex-eng">Is there medicine for headaches?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">resep</span><span className="eng-word">prescription</span></div>
+    <div className="example"><span className="ex-indo">Perlu resep nggak?</span><br /><span className="ex-eng">Do I need a prescription?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sembuh</span><span className="eng-word">healed / recovered</span></div>
+    <div className="example"><span className="ex-indo">Sudah sembuh belum?</span><br /><span className="ex-eng">Have you recovered yet?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">istirahat</span><span className="eng-word">rest (as medical advice)</span></div>
+    <div className="example"><span className="ex-indo">Dokter bilang harus istirahat dua hari.</span><br /><span className="ex-eng">The doctor said I need to rest for two days.</span></div>
+  </div>
+
 </div>
 
 <div style={{ textAlign: "center", padding: "40px 16px 20px", color: "var(--text-muted)", fontSize: "13px" }}>
-  ~210 entries total · Built for conversational Bali Indonesian
+  ~390 entries total · Built for conversational Bali Indonesian
 </div>
+
+
 
 </div>
     </>

@@ -12,7 +12,13 @@ const NAV_SECTIONS = [
   { id: "questions", label: "Question Words" },
   { id: "prepositions", label: "Prepositions" },
   { id: "adverbs", label: "Adverbs" },
-  { id: "extras", label: "More Categories" },
+  { id: "particles", label: "Particles" },
+  { id: "nouns", label: "Nouns" },
+  { id: "transactions", label: "Transactions" },
+  { id: "negation", label: "Negation" },
+  { id: "affixes", label: "Affixes" },
+  { id: "fillers", label: "Fillers" },
+  { id: "health", label: "Health" },
 ];
 
 export default async function LanguageLayout({
