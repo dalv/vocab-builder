@@ -1,19 +1,15 @@
-# Indonesian Vocabulary Builder
+# Vocabulary Builder
 
-A personal vocabulary reference for learning conversational Indonesian, built for everyday life in Bali.
+A personal vocabulary reference for learning languages, starting with conversational Indonesian and Mandarin Chinese.
+
+## Languages
+
+- **Indonesian** — ~210 entries of conversational words and phrases for everyday life in Bali
+- **Mandarin Chinese** — coming soon
 
 ## What's inside
 
-Around 210 vocabulary entries organized into six categories:
-
-- **Common Verbs** — wanting, moving, daily life, communication, actions
-- **Adjective Pairs** — opposites grouped together to help them stick
-- **Connection Words** — the glue for building real sentences
-- **Question Words** — the essentials for asking anything
-- **Prepositions & Location** — directions, positions, and places
-- **Time & Frequency Adverbs** — when and how often things happen
-
-Each entry includes the Indonesian word, its English meaning, and an example sentence showing how it's actually used in casual conversation.
+Vocabulary entries organized into categories: verbs, adjective pairs, connectors, question words, prepositions, and adverbs. Each entry includes the target word, its English meaning, and an example sentence showing real usage.
 
 ## Running locally
 

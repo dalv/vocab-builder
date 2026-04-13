@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Indonesian Vocabulary Builder",
-  description: "Conversational words & phrases for everyday life in Bali",
+  title: "Vocabulary Builder",
+  description: "Personal vocabulary reference for learning languages",
 };
 
 export default function RootLayout({

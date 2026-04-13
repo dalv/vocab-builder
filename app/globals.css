@@ -29,6 +29,36 @@ header {
   text-align: center;
 }
 
+.lang-selector {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lang-pill {
+  display: inline-block;
+  padding: 5px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(250, 248, 244, 0.6);
+  text-decoration: none;
+  border: 1px solid rgba(250, 248, 244, 0.2);
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.lang-pill:hover {
+  color: #faf8f4;
+  border-color: rgba(250, 248, 244, 0.5);
+}
+
+.lang-pill-active {
+  color: #faf8f4;
+  background: rgba(250, 248, 244, 0.15);
+  border-color: rgba(250, 248, 244, 0.4);
+}
+
 header h1 {
   font-family: 'Noto Serif', serif;
   font-size: 28px;
