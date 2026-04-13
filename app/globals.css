@@ -112,6 +112,7 @@ header p {
 
 .section {
   margin-top: 40px;
+  scroll-margin-top: 60px;
 }
 
 .section-header {
@@ -169,7 +170,7 @@ header p {
 .word-row {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -177,7 +178,6 @@ header p {
   font-weight: 700;
   font-size: 17px;
   color: var(--indo);
-  min-width: 100px;
 }
 
 .pinyin {
@@ -188,12 +188,21 @@ header p {
 }
 
 .eng-word {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text);
 }
 
 .pair-side .pinyin {
   font-size: 12px;
+}
+
+/* Reset grid for pair-side (uses its own flex layout) */
+.pair-side .indo-word,
+.pair-side .pinyin,
+.pair-side .eng-word {
+  grid-column: unset;
+  grid-row: unset;
+  align-self: unset;
 }
 
 .note-tag {
@@ -220,6 +229,14 @@ header p {
   font-weight: 500;
 }
 
+.example .ex-pinyin {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 12.5px;
+  grid-column: 1;
+  grid-row: 2;
+}
+
 .example .ex-eng {
   color: var(--text-muted);
   font-style: italic;
@@ -243,11 +260,12 @@ header p {
 
 .pair-side {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
 }
 
 .pair-side .indo-word { font-size: 16px; }
-.pair-side .eng-word { font-size: 13px; color: var(--text-muted); }
 
 .pair-divider {
   color: var(--border);
@@ -394,25 +412,54 @@ mark.search-hl {
 }
 
 .example {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  column-gap: 16px;
 }
 
-.example > span {
-  flex: 1 1 auto;
+.example > br {
+  display: none;
+}
+
+.example .ex-indo {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.example .ex-eng {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .example .play-btn {
+  grid-column: 3;
+  grid-row: 1;
   align-self: center;
-  margin-left: auto;
+}
+
+/* Examples with pinyin (Mandarin): stack hanzi + pinyin on left */
+.example:has(.ex-pinyin) {
+  row-gap: 0;
+}
+
+.example:has(.ex-pinyin) .ex-eng {
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
+.example:has(.ex-pinyin) .play-btn {
+  grid-row: 1 / 3;
 }
 
 @media (max-width: 500px) {
-  .pair-row { grid-template-columns: 1fr; gap: 2px; }
-  .pair-divider { display: none; }
-  .pair-examples { grid-template-columns: 1fr; }
   .indo-word { min-width: unset; }
   header { padding: 32px 16px 28px; }
   header h1 { font-size: 24px; }
+}
+
+@media (max-width: 320px) {
+  .pair-row { grid-template-columns: 1fr; gap: 2px; }
+  .pair-divider { display: none; }
+  .pair-examples { grid-template-columns: 1fr; }
 }
