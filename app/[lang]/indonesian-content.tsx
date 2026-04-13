@@ -7,7 +7,7 @@ export default function IndonesianContent() {
 <div className="section" id="verbs">
   <div className="section-header">
     <h2>Common Verbs</h2>
-    <span className="count">75 words</span>
+    <span className="count">80 words</span>
   </div>
   <p className="section-note">Conversational Indonesian usually drops the me- prefix in speech. I've listed the base/informal form first, with the formal prefix in parentheses where relevant.</p>
 
@@ -466,13 +466,34 @@ export default function IndonesianContent() {
     <div className="example"><span className="ex-indo">Bisa benerin motor ini?</span><br /><span className="ex-eng">Can you fix this motorbike?</span></div>
   </div>
 
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">tergantung</span><span className="eng-word">depends</span></div>
+    <div className="example"><span className="ex-indo">Tergantung cuaca.</span><br /><span className="ex-eng">Depends on the weather.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">ketinggalan</span><span className="eng-word">left behind / missed</span></div>
+    <div className="example"><span className="ex-indo">HP-ku ketinggalan di warung.</span><br /><span className="ex-eng">I left my phone at the warung.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">titip</span><span className="eng-word">leave something with someone / ask someone to get something for you</span></div>
+    <div className="example"><span className="ex-indo">Kalau ke toko, titip pisang ya.</span><br /><span className="ex-eng">If you're going to the store, get me some bananas.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">isi</span><span className="eng-word">fill / contents / top up</span></div>
+    <div className="example"><span className="ex-indo">Aku mau isi bensin dulu.</span><br /><span className="ex-eng">I need to fill up gas first.</span></div>
+    <div className="example"><span className="ex-indo">Isi pulsa dong.</span><br /><span className="ex-eng">Top up my phone credit.</span></div>
+  </div>
+
 </div>
 
 {/* ==================== ADJECTIVE PAIRS ==================== */}
 <div className="section" id="adjectives">
   <div className="section-header">
     <h2>Adjective Pairs</h2>
-    <span className="count">35 pairs</span>
+    <span className="count">37 pairs</span>
   </div>
   <p className="section-note">Indonesian adjectives come after the noun: "air panas" = water hot (hot water). Learning them as opposite pairs makes them stick faster.</p>
 
@@ -898,6 +919,30 @@ export default function IndonesianContent() {
     </div>
   </div>
 
+  <div className="pair-card">
+    <div className="pair-row">
+      <div className="pair-side"><span className="indo-word">kuat</span><span className="eng-word">strong</span></div>
+      <span className="pair-divider">↔</span>
+      <div className="pair-side"><span className="indo-word">lemah</span><span className="eng-word">weak</span></div>
+    </div>
+    <div className="pair-examples">
+      <div className="example"><span className="ex-indo">Kopinya kuat banget.</span><br /><span className="ex-eng">The coffee is really strong.</span></div>
+      <div className="example"><span className="ex-indo">Badan aku masih lemah sesudah sakit.</span><br /><span className="ex-eng">My body is still weak after being sick.</span></div>
+    </div>
+  </div>
+
+  <div className="pair-card">
+    <div className="pair-row">
+      <div className="pair-side"><span className="indo-word">berat</span><span className="eng-word">heavy</span></div>
+      <span className="pair-divider">↔</span>
+      <div className="pair-side"><span className="indo-word">ringan</span><span className="eng-word">light</span></div>
+    </div>
+    <div className="pair-examples">
+      <div className="example"><span className="ex-indo">Tasnya berat banget, isinya apa sih?</span><br /><span className="ex-eng">The bag is so heavy, what's inside it?</span></div>
+      <div className="example"><span className="ex-indo">Kamu ringan banget. Aku bisa gendong kamu.</span><br /><span className="ex-eng">You're very light. I can carry you.</span></div>
+    </div>
+  </div>
+
 </div>
 
 {/* ==================== CONNECTORS ==================== */}
@@ -1232,7 +1277,7 @@ export default function IndonesianContent() {
 <div className="section" id="adverbs">
   <div className="section-header">
     <h2>Time &amp; Frequency Adverbs</h2>
-    <span className="count">25 words</span>
+    <span className="count">33 words</span>
   </div>
   <p className="section-note">These are the words that let you talk about when things happen — past, present, future, and how often.</p>
 
@@ -1365,6 +1410,46 @@ export default function IndonesianContent() {
   <div className="word-card">
     <div className="word-row"><span className="indo-word">kira-kira</span><span className="eng-word">approximately / about</span></div>
     <div className="example"><span className="ex-indo">Kira-kira 30 menit dari sini.</span><br /><span className="ex-eng">About 30 minutes from here.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">bareng</span><span className="eng-word">together</span></div>
+    <div className="example"><span className="ex-indo">Kita pergi bareng ya.</span><br /><span className="ex-eng">Let's go together.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">pisah</span><span className="eng-word">separate / separately</span></div>
+    <div className="example"><span className="ex-indo">Bayar pisah ya.</span><br /><span className="ex-eng">We'll pay separately.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sendiri</span><span className="eng-word">alone / by oneself</span></div>
+    <div className="example"><span className="ex-indo">Aku pergi sendiri.</span><br /><span className="ex-eng">I'm going alone.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">lain</span><span className="eng-word">other / different</span></div>
+    <div className="example"><span className="ex-indo">Ada warna lain?</span><br /><span className="ex-eng">Is there another color?</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">semua</span><span className="eng-word">all / everything</span></div>
+    <div className="example"><span className="ex-indo">Semua sudah siap.</span><br /><span className="ex-eng">Everything is ready.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">lancar</span><span className="eng-word">smooth / fluent</span></div>
+    <div className="example"><span className="ex-indo">Bahasa Indonesianya lancar banget!</span><br /><span className="ex-eng">Your Indonesian is so fluent!</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">bosan</span><span className="eng-word">bored</span></div>
+    <div className="example"><span className="ex-indo">Aku bosan di rumah terus.</span><br /><span className="ex-eng">I'm bored being home all the time.</span></div>
+  </div>
+
+  <div className="word-card">
+    <div className="word-row"><span className="indo-word">sengaja</span><span className="eng-word">on purpose</span></div>
+    <div className="example"><span className="ex-indo">Aku nggak sengaja.</span><br /><span className="ex-eng">I didn't do it on purpose.</span></div>
   </div>
 
 </div>

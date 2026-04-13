@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import IndonesianContent from "./indonesian-content";
 import MandarinContent from "./mandarin-content";
+import VocabShell from "./vocab-shell";
 
 const LANGUAGES = ["indonesian", "mandarin"] as const;
 
@@ -19,12 +20,17 @@ export default async function LanguagePage({
     notFound();
   }
 
+  let content;
   switch (lang) {
     case "indonesian":
-      return <IndonesianContent />;
+      content = <IndonesianContent />;
+      break;
     case "mandarin":
-      return <MandarinContent />;
+      content = <MandarinContent />;
+      break;
     default:
       notFound();
   }
+
+  return <VocabShell lang={lang}>{content}</VocabShell>;
 }

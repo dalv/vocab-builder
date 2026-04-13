@@ -180,9 +180,20 @@ header p {
   min-width: 100px;
 }
 
+.pinyin {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
 .eng-word {
   font-size: 15px;
   color: var(--text);
+}
+
+.pair-side .pinyin {
+  font-size: 12px;
 }
 
 .note-tag {
@@ -285,6 +296,116 @@ header p {
 
 .extra-section li strong {
   color: var(--accent);
+}
+
+/* Search bar */
+.search-bar {
+  max-width: 720px;
+  margin: 20px auto 0;
+  padding: 0 16px;
+}
+
+.search-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 40px 12px 40px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(196, 88, 26, 0.1);
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.search-clear:hover {
+  color: var(--text);
+}
+
+/* Search highlight */
+mark.search-hl {
+  background: rgba(196, 88, 26, 0.15);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Play button */
+.play-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+  color: var(--indo);
+  cursor: pointer;
+  margin-left: 8px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.play-btn:hover {
+  background: var(--indo-bg);
+  border-color: var(--indo);
+}
+
+.example {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.example > span {
+  flex: 1 1 auto;
+}
+
+.example .play-btn {
+  align-self: center;
+  margin-left: auto;
 }
 
 @media (max-width: 500px) {
