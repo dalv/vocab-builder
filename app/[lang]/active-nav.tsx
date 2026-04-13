@@ -19,22 +19,19 @@ const SECTIONS = [
 ];
 
 export default function ActiveNav() {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [visibleId, setVisibleId] = useState<string | null>(null);
   const [showHome, setShowHome] = useState(false);
-  const isStickyRef = useRef(false);
 
-  // Track which section is in view
+  // Track which section is in view (always, regardless of sticky state)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!isStickyRef.current) return;
-
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
         if (visible.length > 0) {
-          setActiveId(visible[0].target.id);
+          setVisibleId(visible[0].target.id);
         }
       },
       { rootMargin: "-60px 0px -70% 0px" }
@@ -55,16 +52,16 @@ export default function ActiveNav() {
 
     const check = () => {
       const navRect = nav.getBoundingClientRect();
-      const isSticky = navRect.top <= 0;
-      isStickyRef.current = isSticky;
-      setShowHome(isSticky);
-      if (!isSticky) setActiveId(null);
+      setShowHome(navRect.top <= 0);
     };
 
     check();
     window.addEventListener("scroll", check, { passive: true });
     return () => window.removeEventListener("scroll", check);
   }, []);
+
+  // Only show active highlight when nav is sticky
+  const activeId = showHome ? visibleId : null;
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
