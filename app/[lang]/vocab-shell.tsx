@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { speak } from "../lib/tts";
 
 export default function VocabShell({
   lang,
@@ -209,20 +210,3 @@ function highlightText(root: HTMLElement, term: string) {
   }
 }
 
-function speak(text: string, lang: string) {
-  if (!("speechSynthesis" in window)) return;
-
-  // Cancel any ongoing speech
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang === "mandarin" ? "zh-CN" : "id-ID";
-  utterance.rate = 0.85;
-
-  // Try to find a matching voice
-  const voices = window.speechSynthesis.getVoices();
-  const match = voices.find((v) => v.lang.startsWith(utterance.lang.split("-")[0]));
-  if (match) utterance.voice = match;
-
-  window.speechSynthesis.speak(utterance);
-}
