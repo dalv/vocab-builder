@@ -65,6 +65,12 @@ header h1 {
   font-weight: 700;
   letter-spacing: -0.5px;
   margin-bottom: 8px;
+  /* Long-press is a hidden review-mode trigger; suppress iOS callout +
+     selection so the gesture feels like nothing until it navigates. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 header p {
