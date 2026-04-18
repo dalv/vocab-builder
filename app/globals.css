@@ -521,9 +521,10 @@ mark.search-hl {
   right: 2px;
 }
 
-/* Reserve a little space only when the indicator is actually present
-   so anonymous visitors (no indicator) see an unchanged layout. */
-.word-card:has(.card-signal) { padding-right: 36px; }
+/* Reserve space only on the word-row (which shares height with the
+   icon) — the example box below it keeps its full width. Anonymous
+   visitors have no .card-signal, so layout is unchanged for them. */
+.word-card:has(.card-signal) .word-row { padding-right: 24px; }
 
 /* ---------- Auth: hidden Sign Out + Review login ---------- */
 
