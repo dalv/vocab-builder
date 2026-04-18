@@ -75,9 +75,9 @@ export default function ReviewSession({ lang, queue, initialStruggling }: Props)
   }, [flipped, current, lang]);
 
   const flip = useCallback(() => {
-    if (!current || flipped) return;
-    setFlipped(true);
-  }, [current, flipped]);
+    if (!current) return;
+    setFlipped((f) => !f);
+  }, [current]);
 
   // Click/tap on the card: only flip if the user isn't mid-selection.
   // (Dragging to select text on the card otherwise flips it prematurely.)

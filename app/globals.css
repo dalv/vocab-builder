@@ -817,7 +817,6 @@ header { position: relative; }
 }
 .review-card > * { user-select: text; }
 .review-card:hover { box-shadow: 0 6px 24px rgba(44, 36, 22, 0.12); }
-.review-card.is-flipped { cursor: default; }
 
 .review-front-word {
   font-family: 'Noto Serif', serif;
