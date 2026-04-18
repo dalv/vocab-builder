@@ -955,6 +955,22 @@ header { position: relative; }
 }
 .review-exit:hover { opacity: 0.9; }
 
+.review-practice-btn {
+  display: block;
+  margin: 0 auto 12px;
+  background: transparent;
+  color: var(--indo);
+  border: 1px solid var(--indo);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.review-practice-btn:hover { background: var(--indo-bg); }
+
 @media (max-width: 480px) {
   .review-front-word, .review-back-word { font-size: 26px; }
   .review-card { padding: 28px 20px; min-height: 260px; }

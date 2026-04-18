@@ -37,6 +37,8 @@ export default function ReviewSession({ lang, queue, initialStruggling }: Props)
   const [stats, setStats] = useState({ fail: 0, hard: 0, easy: 0 });
   const [struggling, setStruggling] = useState<StrugglingItem[]>(initialStruggling);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeQueue, setActiveQueue] = useState<SessionItem[]>(queue);
+  const [mode, setMode] = useState<"normal" | "practice">("normal");
   const submittingRef = useRef(false);
 
   // Restore collapse preference on mount.
@@ -48,9 +50,24 @@ export default function ReviewSession({ lang, queue, initialStruggling }: Props)
     localStorage.setItem(SIDEBAR_KEY, sidebarOpen ? "1" : "0");
   }, [sidebarOpen]);
 
-  const total = queue.length;
-  const current = queue[index];
+  const total = activeQueue.length;
+  const current = activeQueue[index];
   const done = index >= total;
+
+  const startPractice = useCallback(() => {
+    if (struggling.length === 0) return;
+    // Shuffle so the session doesn't always start with the same hardest card.
+    const shuffled = struggling
+      .map((s) => ({ card: s.card, state: s.state }) as SessionItem)
+      .map((v) => ({ v, r: Math.random() }))
+      .sort((a, b) => a.r - b.r)
+      .map(({ v }) => v);
+    setActiveQueue(shuffled);
+    setMode("practice");
+    setIndex(0);
+    setFlipped(false);
+    setStats({ fail: 0, hard: 0, easy: 0 });
+  }, [struggling]);
 
   // Auto-speak the back side whenever a card flips.
   useEffect(() => {
@@ -195,6 +212,15 @@ export default function ReviewSession({ lang, queue, initialStruggling }: Props)
         <div className="review-empty">
           <h2>All caught up</h2>
           <p>No cards are due right now. Come back later.</p>
+          {struggling.length > 0 && (
+            <button
+              type="button"
+              className="review-practice-btn"
+              onClick={startPractice}
+            >
+              Practice struggling words ({struggling.length})
+            </button>
+          )}
           <button className="review-exit" onClick={exit}>
             Back to vocab
           </button>
@@ -207,11 +233,21 @@ export default function ReviewSession({ lang, queue, initialStruggling }: Props)
     return (
       <div className="review-wrap">
         <div className="review-empty">
-          <h2>Session complete</h2>
+          <h2>{mode === "practice" ? "Practice complete" : "Session complete"}</h2>
           <p>
             {total} cards reviewed · {stats.easy} easy · {stats.hard} hard ·{" "}
             {stats.fail} failed
           </p>
+          {struggling.length > 0 && (
+            <button
+              type="button"
+              className="review-practice-btn"
+              onClick={startPractice}
+            >
+              {mode === "practice" ? "Practice again" : "Practice struggling words"}{" "}
+              ({struggling.length})
+            </button>
+          )}
           <button className="review-exit" onClick={exit}>
             Back to vocab
           </button>
@@ -229,7 +265,7 @@ export default function ReviewSession({ lang, queue, initialStruggling }: Props)
       >
         <div className="review-main">
       <div className="review-meta">
-        <span>{lang}</span>
+        <span>{mode === "practice" ? `practice · ${lang}` : lang}</span>
         <span>
           {index + 1} / {total}
         </span>
