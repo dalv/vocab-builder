@@ -1,6 +1,6 @@
 import { createClient } from "../lib/supabase/server";
 import { getAllCards, type Lang } from "../lib/cards";
-import { buildSession, type StoredState } from "../lib/session";
+import { buildSession, buildStrugglingList, type StoredState } from "../lib/session";
 import LoginForm from "./LoginForm";
 import ReviewSession from "./ReviewSession";
 
@@ -46,6 +46,13 @@ export default async function ReviewPage({
   }
 
   const queue = buildSession(cards, states);
+  const initialStruggling = buildStrugglingList(cards, states);
 
-  return <ReviewSession lang={lang} queue={queue} />;
+  return (
+    <ReviewSession
+      lang={lang}
+      queue={queue}
+      initialStruggling={initialStruggling}
+    />
+  );
 }

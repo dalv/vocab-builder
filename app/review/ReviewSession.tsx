@@ -12,12 +12,16 @@ import {
   type Rating,
   type ReviewState,
 } from "../lib/srs";
-import type { SessionItem } from "../lib/session";
+import type { SessionItem, StrugglingItem } from "../lib/session";
 
 type Props = {
   lang: Lang;
   queue: SessionItem[];
+  initialStruggling: StrugglingItem[];
 };
+
+const SIDEBAR_KEY = "review-sidebar-open";
+const STRUGGLE_THRESHOLD = 2.5;
 
 const RATING_LABEL: Record<Rating, string> = {
   0: "Fail",
@@ -25,13 +29,24 @@ const RATING_LABEL: Record<Rating, string> = {
   2: "Easy",
 };
 
-export default function ReviewSession({ lang, queue }: Props) {
+export default function ReviewSession({ lang, queue, initialStruggling }: Props) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [stats, setStats] = useState({ fail: 0, hard: 0, easy: 0 });
+  const [struggling, setStruggling] = useState<StrugglingItem[]>(initialStruggling);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const submittingRef = useRef(false);
+
+  // Restore collapse preference on mount.
+  useEffect(() => {
+    const stored = localStorage.getItem(SIDEBAR_KEY);
+    if (stored === "0") setSidebarOpen(false);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, sidebarOpen ? "1" : "0");
+  }, [sidebarOpen]);
 
   const total = queue.length;
   const current = queue[index];
@@ -102,6 +117,30 @@ export default function ReviewSession({ lang, queue }: Props) {
             ? { ...s, hard: s.hard + 1 }
             : { ...s, easy: s.easy + 1 },
       );
+
+      // Keep the sidebar's struggling list in sync with the live state.
+      setStruggling((prev) => {
+        const qualifies = next.ease_factor < STRUGGLE_THRESHOLD;
+        const existingIdx = prev.findIndex(
+          (it) => it.card.id === current.card.id,
+        );
+        let updated: StrugglingItem[];
+        if (existingIdx >= 0) {
+          updated = prev.slice();
+          if (qualifies) {
+            updated[existingIdx] = { card: current.card, state: next };
+          } else {
+            updated.splice(existingIdx, 1);
+          }
+        } else if (qualifies) {
+          updated = [...prev, { card: current.card, state: next }];
+        } else {
+          return prev;
+        }
+        updated.sort((a, b) => a.state.ease_factor - b.state.ease_factor);
+        return updated;
+      });
+
       setFlipped(false);
       setIndex((i) => i + 1);
       submittingRef.current = false;
@@ -185,11 +224,24 @@ export default function ReviewSession({ lang, queue }: Props) {
 
   return (
     <div className="review-wrap">
+      <div
+        className={`review-layout${sidebarOpen ? " with-sidebar" : ""}`}
+      >
+        <div className="review-main">
       <div className="review-meta">
         <span>{lang}</span>
         <span>
           {index + 1} / {total}
         </span>
+        {!sidebarOpen && (
+          <button
+            type="button"
+            className="review-sidebar-open-btn"
+            onClick={() => setSidebarOpen(true)}
+          >
+            Show list ({struggling.length})
+          </button>
+        )}
         <button className="review-exit-link" onClick={exit} aria-label="Exit review">
           Esc
         </button>
@@ -247,6 +299,56 @@ export default function ReviewSession({ lang, queue }: Props) {
       </div>
 
       <div className="review-footer">Esc to exit · Space to flip · 1/2/3 to rate</div>
+        </div>
+
+        {sidebarOpen && (
+          <aside className="review-sidebar" aria-label="Struggling words">
+            <div className="review-sidebar-header">
+              <h3>Struggling ({struggling.length})</h3>
+              <button
+                type="button"
+                className="review-sidebar-toggle"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Hide struggling list"
+              >
+                Hide
+              </button>
+            </div>
+            {struggling.length === 0 ? (
+              <div className="review-sidebar-empty">
+                Words you mark Hard or Fail will show up here, hardest first.
+              </div>
+            ) : (
+              <ul className="review-sidebar-list">
+                {struggling.map((item) => (
+                  <li key={item.card.id} className="review-sidebar-item">
+                    <div className="review-sidebar-word">{item.card.back}</div>
+                    {item.card.backPinyin && (
+                      <div className="review-sidebar-pinyin">
+                        {item.card.backPinyin}
+                      </div>
+                    )}
+                    <div className="review-sidebar-example">
+                      {item.card.backExample}
+                    </div>
+                    {item.card.backExamplePinyin && (
+                      <div className="review-sidebar-example-pinyin">
+                        {item.card.backExamplePinyin}
+                      </div>
+                    )}
+                    <div
+                      className="review-sidebar-ease"
+                      title={`Ease factor ${item.state.ease_factor.toFixed(2)} (lower = harder)`}
+                    >
+                      ease {item.state.ease_factor.toFixed(2)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

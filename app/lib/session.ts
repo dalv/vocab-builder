@@ -1,5 +1,6 @@
 import type { Card } from "./cards";
 import type { ReviewState } from "./srs";
+export type { Card } from "./cards";
 
 export const NEW_PER_DAY = 10;
 export const MAX_PER_SESSION = 30;
@@ -51,6 +52,46 @@ export function buildSession(
   const newToday = shuffle(fresh).slice(0, newPerDay);
   const queue = shuffle([...due, ...newToday]).slice(0, maxPerSession);
   return queue;
+}
+
+export type StrugglingItem = {
+  card: Card;
+  state: ReviewState;
+};
+
+/**
+ * Cards the user has struggled with, sorted hardest-first.
+ *
+ * The SM-2 ease factor starts at 2.5 and moves down only when the user
+ * rates Hard (−0.15) or Fail (−0.2), so `ease_factor < 2.5` captures
+ * exactly the cards that have been difficult at least once. Rating Easy
+ * only raises ease, so Easy-only cards never appear here.
+ */
+export function buildStrugglingList(
+  cards: Card[],
+  states: Map<string, StoredState>,
+  opts: { limit?: number; threshold?: number } = {},
+): StrugglingItem[] {
+  const limit = opts.limit ?? 100;
+  const threshold = opts.threshold ?? 2.5;
+
+  const items: StrugglingItem[] = [];
+  for (const card of cards) {
+    const s = states.get(card.id);
+    if (!s) continue;
+    if (s.ease_factor < threshold) {
+      items.push({
+        card,
+        state: {
+          ease_factor: s.ease_factor,
+          interval_days: s.interval_days,
+          repetitions: s.repetitions,
+        },
+      });
+    }
+  }
+  items.sort((a, b) => a.state.ease_factor - b.state.ease_factor);
+  return items.slice(0, limit);
 }
 
 function shuffle<T>(arr: T[]): T[] {
