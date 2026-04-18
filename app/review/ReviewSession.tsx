@@ -47,6 +47,13 @@ export default function ReviewSession({ lang, queue }: Props) {
     setFlipped(true);
   }, [current, flipped]);
 
+  // Click/tap on the card: only flip if the user isn't mid-selection.
+  // (Dragging to select text on the card otherwise flips it prematurely.)
+  const onCardClick = useCallback(() => {
+    if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+    flip();
+  }, [flip]);
+
   const rate = useCallback(
     async (rating: Rating) => {
       if (!current || !flipped || submittingRef.current) return;
@@ -190,7 +197,7 @@ export default function ReviewSession({ lang, queue }: Props) {
 
       <div
         className={`review-card${flipped ? " is-flipped" : ""}`}
-        onClick={flip}
+        onClick={onCardClick}
         role="button"
         tabIndex={0}
       >

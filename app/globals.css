@@ -648,9 +648,9 @@ header { position: relative; }
   gap: 16px;
   cursor: pointer;
   text-align: center;
-  user-select: none;
   transition: box-shadow 0.15s;
 }
+.review-card > * { user-select: text; }
 .review-card:hover { box-shadow: 0 6px 24px rgba(44, 36, 22, 0.12); }
 .review-card.is-flipped { cursor: default; }
 
