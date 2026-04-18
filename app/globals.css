@@ -192,6 +192,7 @@ header p {
 }
 
 .word-card {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -292,10 +293,12 @@ header p {
 }
 
 .pair-side {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px;
+  padding-right: 20px; /* room for the signal-bars indicator */
 }
 
 .pair-side .indo-word { font-size: 16px; }
@@ -496,6 +499,31 @@ mark.search-hl {
   .pair-divider { display: none; }
   .pair-examples { grid-template-columns: 1fr; }
 }
+
+/* ---------- Mastery signal bars (main vocab page) ---------- */
+
+.signal-bars {
+  display: inline-block;
+  vertical-align: baseline;
+  flex-shrink: 0;
+}
+.signal-bar-on  { fill: var(--indo);       opacity: 0.8; }
+.signal-bar-off { fill: var(--text-muted); opacity: 0.2; }
+
+.card-signal {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  pointer-events: none;
+}
+.pair-signal {
+  top: 2px;
+  right: 2px;
+}
+
+/* Reserve a little space only when the indicator is actually present
+   so anonymous visitors (no indicator) see an unchanged layout. */
+.word-card:has(.card-signal) { padding-right: 36px; }
 
 /* ---------- Auth: hidden Sign Out + Review login ---------- */
 

@@ -62,3 +62,22 @@ export function computeDueAt(intervalDays: number, from: Date = new Date()): Dat
   d.setDate(d.getDate() + intervalDays);
   return d;
 }
+
+/**
+ * Maps an SRS state to a 0–3 "signal strength" used by the main vocab page.
+ * Interval is the cleanest signal: SM-2 grows it as recall succeeds and
+ * shrinks it on failure, so it's a direct readout of how well the
+ * scheduler thinks the card is learned.
+ */
+export type MasteryLevel = 0 | 1 | 2 | 3;
+
+export function masteryLevel(
+  state: Pick<ReviewState, "interval_days"> | undefined | null,
+): MasteryLevel {
+  if (!state) return 0;
+  const d = state.interval_days;
+  if (d <= 0) return 0;
+  if (d < 7) return 1;
+  if (d < 30) return 2;
+  return 3;
+}

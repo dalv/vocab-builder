@@ -1,4 +1,10 @@
 import type { Section, WordEntry, PairEntry, Example } from "./types";
+import type { Lang } from "../lib/cards";
+import { wordCardId, pairSideCardId } from "../lib/cards";
+import type { MasteryLevel } from "../lib/srs";
+import SignalBars from "../components/SignalBars";
+
+type MasteryMap = Map<string, MasteryLevel> | null;
 
 function ExampleBlock({ ex }: { ex: Example }) {
   return (
@@ -16,9 +22,30 @@ function ExampleBlock({ ex }: { ex: Example }) {
   );
 }
 
-function WordCard({ entry }: { entry: WordEntry }) {
+function WordCard({
+  entry,
+  lang,
+  sectionId,
+  masteryMap,
+}: {
+  entry: WordEntry;
+  lang?: Lang;
+  sectionId: string;
+  masteryMap: MasteryMap;
+}) {
+  const level =
+    masteryMap && lang
+      ? (masteryMap.get(wordCardId(lang, sectionId, entry.word)) ?? 0)
+      : null;
   return (
     <div className="word-card">
+      {level !== null && (
+        <SignalBars
+          level={level}
+          className="card-signal"
+          title={`Mastery ${level}/3`}
+        />
+      )}
       <div className="word-row">
         <span className="indo-word">{entry.word}</span>
         {entry.pinyin && <span className="pinyin">{entry.pinyin}</span>}
@@ -32,17 +59,50 @@ function WordCard({ entry }: { entry: WordEntry }) {
   );
 }
 
-function PairCard({ entry }: { entry: PairEntry }) {
+function PairCard({
+  entry,
+  lang,
+  sectionId,
+  masteryMap,
+}: {
+  entry: PairEntry;
+  lang?: Lang;
+  sectionId: string;
+  masteryMap: MasteryMap;
+}) {
+  const leftLevel =
+    masteryMap && lang
+      ? (masteryMap.get(pairSideCardId(lang, sectionId, "left", entry.left.word)) ?? 0)
+      : null;
+  const rightLevel =
+    masteryMap && lang
+      ? (masteryMap.get(pairSideCardId(lang, sectionId, "right", entry.right.word)) ?? 0)
+      : null;
+
   return (
     <div className="pair-card">
       <div className="pair-row">
         <div className="pair-side">
+          {leftLevel !== null && (
+            <SignalBars
+              level={leftLevel}
+              className="card-signal pair-signal"
+              title={`Mastery ${leftLevel}/3`}
+            />
+          )}
           <span className="indo-word">{entry.left.word}</span>
           {entry.left.pinyin && <span className="pinyin">{entry.left.pinyin}</span>}
           <span className="eng-word">{entry.left.eng}</span>
         </div>
         <span className="pair-divider">↔</span>
         <div className="pair-side">
+          {rightLevel !== null && (
+            <SignalBars
+              level={rightLevel}
+              className="card-signal pair-signal"
+              title={`Mastery ${rightLevel}/3`}
+            />
+          )}
           <span className="indo-word">{entry.right.word}</span>
           {entry.right.pinyin && <span className="pinyin">{entry.right.pinyin}</span>}
           <span className="eng-word">{entry.right.eng}</span>
@@ -56,11 +116,33 @@ function PairCard({ entry }: { entry: PairEntry }) {
   );
 }
 
-function renderEntries(words?: WordEntry[], pairs?: PairEntry[]) {
+function renderEntries(
+  lang: Lang | undefined,
+  sectionId: string,
+  masteryMap: MasteryMap,
+  words?: WordEntry[],
+  pairs?: PairEntry[],
+) {
   return (
     <>
-      {words?.map((w, i) => <WordCard key={i} entry={w} />)}
-      {pairs?.map((p, i) => <PairCard key={i} entry={p} />)}
+      {words?.map((w, i) => (
+        <WordCard
+          key={i}
+          entry={w}
+          lang={lang}
+          sectionId={sectionId}
+          masteryMap={masteryMap}
+        />
+      ))}
+      {pairs?.map((p, i) => (
+        <PairCard
+          key={i}
+          entry={p}
+          lang={lang}
+          sectionId={sectionId}
+          masteryMap={masteryMap}
+        />
+      ))}
     </>
   );
 }
@@ -68,9 +150,13 @@ function renderEntries(words?: WordEntry[], pairs?: PairEntry[]) {
 export default function VocabRenderer({
   sections,
   totalLabel,
+  lang,
+  masteryMap = null,
 }: {
   sections: Section[];
   totalLabel: string;
+  lang?: Lang;
+  masteryMap?: MasteryMap;
 }) {
   return (
     <div className="container">
@@ -87,11 +173,11 @@ export default function VocabRenderer({
               <div className="subsection">
                 <h3>{sub.title}</h3>
               </div>
-              {renderEntries(sub.words, sub.pairs)}
+              {renderEntries(lang, section.id, masteryMap, sub.words, sub.pairs)}
             </span>
           ))}
 
-          {renderEntries(section.words, section.pairs)}
+          {renderEntries(lang, section.id, masteryMap, section.words, section.pairs)}
         </div>
       ))}
 

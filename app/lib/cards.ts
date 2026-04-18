@@ -29,10 +29,23 @@ function sectionsFor(lang: Lang): Section[] {
   return lang === "indonesian" ? indonesianSections : mandarinSections;
 }
 
+export function wordCardId(lang: Lang, sectionId: string, word: string): string {
+  return `${lang}:${sectionId}:word:${word}`;
+}
+
+export function pairSideCardId(
+  lang: Lang,
+  sectionId: string,
+  side: "left" | "right",
+  word: string,
+): string {
+  return `${lang}:${sectionId}:pair:${side}:${word}`;
+}
+
 function wordToCard(lang: Lang, sectionId: string, w: WordEntry): Card {
   const ex: Example = w.examples[0];
   return {
-    id: `${lang}:${sectionId}:word:${w.word}`,
+    id: wordCardId(lang, sectionId, w.word),
     lang,
     sectionId,
     front: w.eng,
@@ -54,7 +67,7 @@ function pairSideToCard(
   const s = p[side];
   const ex: Example = p.examples[side === "left" ? 0 : 1];
   return {
-    id: `${lang}:${sectionId}:pair:${side}:${s.word}`,
+    id: pairSideCardId(lang, sectionId, side, s.word),
     lang,
     sectionId,
     front: s.eng,
