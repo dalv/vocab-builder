@@ -7,7 +7,8 @@ export const MAX_PER_SESSION = 30;
 
 export type StoredState = ReviewState & {
   card_id: string;
-  due_at: string; // ISO timestamp
+  due_at: string;    // ISO timestamp
+  created_at?: string; // ISO timestamp of first review for this card
 };
 
 export type SessionItem = {

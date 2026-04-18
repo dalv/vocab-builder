@@ -1,6 +1,11 @@
 import { createClient } from "../lib/supabase/server";
 import { getAllCards, type Lang } from "../lib/cards";
-import { buildSession, buildStrugglingList, type StoredState } from "../lib/session";
+import {
+  buildSession,
+  buildStrugglingList,
+  NEW_PER_DAY,
+  type StoredState,
+} from "../lib/session";
 import LoginForm from "./LoginForm";
 import ReviewSession from "./ReviewSession";
 
@@ -33,7 +38,9 @@ export default async function ReviewPage({
   // 16KB request-header limit we'd hit with .in("card_id", [780 ids]).
   const { data: rows, error } = await supabase
     .from("review_state")
-    .select("card_id, ease_factor, interval_days, repetitions, due_at")
+    .select(
+      "card_id, ease_factor, interval_days, repetitions, due_at, created_at",
+    )
     .like("card_id", `${lang}:%`);
 
   if (error) {
@@ -45,7 +52,18 @@ export default async function ReviewPage({
     states.set(r.card_id, r);
   }
 
-  const queue = buildSession(cards, states);
+  // Rolling 24h cap on new-card introductions: count cards that were
+  // added to review_state in the last 24 hours and subtract from the
+  // daily quota. Prevents "I opened review 3 times today and got 30
+  // new words" by design.
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const introducedInLast24h = (rows ?? []).filter((r) => {
+    const created = (r as StoredState).created_at;
+    return created ? new Date(created).getTime() >= cutoff : false;
+  }).length;
+  const newRemainingToday = Math.max(0, NEW_PER_DAY - introducedInLast24h);
+
+  const queue = buildSession(cards, states, { newPerDay: newRemainingToday });
   const initialStruggling = buildStrugglingList(cards, states);
 
   return (
