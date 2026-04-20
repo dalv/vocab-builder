@@ -1,6 +1,6 @@
 import type { Section, WordEntry, PairEntry, Example } from "./types";
 import type { Lang } from "../lib/cards";
-import { wordCardId, pairSideCardId } from "../lib/cards";
+import { wordExampleCardId, pairSideCardId } from "../lib/cards";
 import type { MasteryLevel } from "../lib/srs";
 import SignalBars from "../components/SignalBars";
 
@@ -33,10 +33,17 @@ function WordCard({
   sectionId: string;
   masteryMap: MasteryMap;
 }) {
-  const level =
-    masteryMap && lang
-      ? (masteryMap.get(wordCardId(lang, sectionId, entry.word)) ?? 0)
-      : null;
+  // When a word has multiple examples it's multiple cards under the hood,
+  // each independently scheduled. The corner icon reflects the MIN level
+  // across them — the word isn't truly "landed" until every sentence is.
+  let level: MasteryLevel | null = null;
+  if (masteryMap && lang) {
+    const levels = entry.examples.map(
+      (_, i) =>
+        masteryMap.get(wordExampleCardId(lang, sectionId, entry.word, i)) ?? 0,
+    );
+    level = (levels.length > 0 ? Math.min(...levels) : 0) as MasteryLevel;
+  }
   return (
     <div className="word-card">
       {level !== null && (

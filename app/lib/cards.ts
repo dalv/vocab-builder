@@ -33,6 +33,24 @@ export function wordCardId(lang: Lang, sectionId: string, word: string): string 
   return `${lang}:${sectionId}:word:${word}`;
 }
 
+/**
+ * Card ID for one example of a WordEntry.
+ *
+ * exampleIndex === 0 returns the legacy ID (`${lang}:{section}:word:{word}`)
+ * so every existing review_state row keeps pointing at the primary card,
+ * verbatim. Additional examples get a positional suffix `:ex{i}` for i ≥ 1
+ * and enter the system as brand-new cards.
+ */
+export function wordExampleCardId(
+  lang: Lang,
+  sectionId: string,
+  word: string,
+  exampleIndex: number,
+): string {
+  const base = wordCardId(lang, sectionId, word);
+  return exampleIndex === 0 ? base : `${base}:ex${exampleIndex}`;
+}
+
 export function pairSideCardId(
   lang: Lang,
   sectionId: string,
@@ -42,10 +60,9 @@ export function pairSideCardId(
   return `${lang}:${sectionId}:pair:${side}:${word}`;
 }
 
-function wordToCard(lang: Lang, sectionId: string, w: WordEntry): Card {
-  const ex: Example = w.examples[0];
-  return {
-    id: wordCardId(lang, sectionId, w.word),
+function wordToCards(lang: Lang, sectionId: string, w: WordEntry): Card[] {
+  return w.examples.map((ex, i) => ({
+    id: wordExampleCardId(lang, sectionId, w.word, i),
     lang,
     sectionId,
     front: w.eng,
@@ -55,7 +72,7 @@ function wordToCard(lang: Lang, sectionId: string, w: WordEntry): Card {
     backExample: ex.target,
     backExamplePinyin: ex.pinyin,
     tag: w.tag,
-  };
+  }));
 }
 
 function pairSideToCard(
@@ -83,7 +100,7 @@ export function getAllCards(lang: Lang): Card[] {
   const out: Card[] = [];
   for (const section of sectionsFor(lang)) {
     const collectFrom = (words?: WordEntry[], pairs?: PairEntry[]) => {
-      if (words) for (const w of words) out.push(wordToCard(lang, section.id, w));
+      if (words) for (const w of words) out.push(...wordToCards(lang, section.id, w));
       if (pairs) {
         for (const p of pairs) {
           out.push(pairSideToCard(lang, section.id, p, "left"));
