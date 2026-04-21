@@ -52,16 +52,19 @@ export default async function ReviewPage({
     states.set(r.card_id, r);
   }
 
-  // Rolling 24h cap on new-card introductions: count cards that were
-  // added to review_state in the last 24 hours and subtract from the
-  // daily quota. Prevents "I opened review 3 times today and got 30
-  // new words" by design.
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  const introducedInLast24h = (rows ?? []).filter((r) => {
+  // Calendar-day cap on new-card introductions: count cards added to
+  // review_state since 00:00 UTC today and subtract from the daily quota.
+  // Prevents "I opened review 3 times today and got 30 new words" while
+  // still giving a fresh 10 after each UTC midnight, so same-time-each-day
+  // sessions don't starve the new-card budget.
+  const startOfToday = new Date();
+  startOfToday.setUTCHours(0, 0, 0, 0);
+  const cutoff = startOfToday.getTime();
+  const introducedToday = (rows ?? []).filter((r) => {
     const created = (r as StoredState).created_at;
     return created ? new Date(created).getTime() >= cutoff : false;
   }).length;
-  const newRemainingToday = Math.max(0, NEW_PER_DAY - introducedInLast24h);
+  const newRemainingToday = Math.max(0, NEW_PER_DAY - introducedToday);
 
   const queue = buildSession(cards, states, { newPerDay: newRemainingToday });
   const initialStruggling = buildStrugglingList(cards, states);
