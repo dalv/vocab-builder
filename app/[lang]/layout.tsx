@@ -2,6 +2,7 @@ import Link from "next/link";
 import ActiveNav from "./active-nav";
 import SignOutButton from "../components/SignOutButton";
 import ReviewShortcut from "../components/ReviewShortcut";
+import StoryBuilderButton from "../components/StoryBuilderButton";
 
 const LANGUAGES = [
   { slug: "indonesian", label: "Indonesian", subtitle: "Conversational words & phrases for everyday life in Bali" },
@@ -39,6 +40,7 @@ export default async function LanguageLayout({
 
       <ActiveNav />
       <ReviewShortcut />
+      <StoryBuilderButton />
 
       {children}
     </>
