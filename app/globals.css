@@ -1232,6 +1232,29 @@ header { position: relative; }
 .story-skip-btn:hover { background: var(--accent-light); border-color: var(--accent); }
 .story-skip-btn:active { background: var(--accent); color: #fff; }
 
+/* On mobile, pin all playback controls (rewind + play + scrubber) to the
+   bottom of the screen so they're always reachable while reading/driving. */
+@media (max-width: 700px) {
+  .story-controls {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 150;
+    margin: 0 auto;
+    max-width: 720px;
+    flex-wrap: nowrap;
+    gap: 10px;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 14px rgba(44, 36, 22, 0.12);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+  .story-controls .story-audio { min-width: 0; }
+  /* Reserve room so the last lines + translation toggle clear the fixed bar. */
+  .stories-wrap { padding-bottom: 128px; }
+}
+
 .story-text {
   white-space: pre-wrap;
   font-size: 19px;
