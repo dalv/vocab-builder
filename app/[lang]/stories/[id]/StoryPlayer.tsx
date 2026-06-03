@@ -306,7 +306,6 @@ export default function StoryPlayer({
               </p>
             )}
             <p className="story-popup-en">{popup.en}</p>
-            <p className="story-popup-hint">Tap an Indonesian word above to explain the choice</p>
           </div>
         </>
       )}

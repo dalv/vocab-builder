@@ -1272,13 +1272,6 @@ header { position: relative; }
   transition: background 0.12s;
 }
 .story-popup-word:hover { background: var(--indo-bg); text-decoration: underline; }
-.story-popup-hint {
-  margin-top: 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-  opacity: 0.7;
-  font-style: italic;
-}
 
 /* Second-level popup: Claude's word-choice explanation */
 .story-popup-backdrop-2 { z-index: 202; }
