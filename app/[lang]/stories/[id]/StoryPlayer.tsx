@@ -13,16 +13,16 @@ type Segment = { speaker: string; gender: "F" | "M" };
 
 /**
  * Split the story text into PARAGRAPHS of render pieces, assigning each
- * non-whitespace chunk the next GLOBAL token index. Paragraphs are separated by
- * blank lines (podcast turns are joined that way, so paragraph i ↔ segment i).
- * Because tokens were produced by the SAME whitespace split (see alignment.ts),
- * the Nth word across all paragraphs is timing token N — display and fill line
- * up by construction.
+ * non-whitespace chunk the next GLOBAL token index. Split on any newline run, to
+ * match splitParagraphs() used for the English side + sentence map, so paragraph
+ * i lines up with English paragraph i and (for podcasts) segment i. Because
+ * tokens were produced by the SAME whitespace split (see alignment.ts), the Nth
+ * word across all paragraphs is timing token N — display and fill line up.
  */
 function toParagraphs(text: string): Piece[][] {
   const paragraphs: Piece[][] = [];
   let index = 0;
-  for (const para of text.split(/\n{2,}/)) {
+  for (const para of text.split(/\n+/)) {
     const pieces: Piece[] = [];
     for (const part of para.split(/(\s+)/)) {
       if (part === "") continue;
@@ -84,7 +84,25 @@ export default function StoryPlayer({
   const [showTranslation, setShowTranslation] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState<string | null>(null);
+  // "3-pass" study mode: per paragraph, play Indonesian audio → speak the
+  // English (browser TTS) → play the Indonesian audio again, then next paragraph.
+  const [studyMode, setStudyMode] = useState(false);
   const router = useRouter();
+
+  // English paragraph texts, parallel to the rendered paragraphs.
+  const englishParaTexts = useMemo(() => splitParagraphs(translation), [translation]);
+  // Audio time range [start, end] for each rendered paragraph, from word timings.
+  const paraRanges = useMemo(() => {
+    return paragraphs.map((para) => {
+      const words = para.filter((p): p is { kind: "word"; value: string; index: number } => p.kind === "word");
+      if (!words.length) return null;
+      const first = words[0].index;
+      const last = words[words.length - 1].index;
+      const start = tokens[first]?.start ?? 0;
+      const end = tokens[last]?.end ?? start;
+      return { start, end };
+    });
+  }, [paragraphs, tokens]);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -94,6 +112,12 @@ export default function StoryPlayer({
   const primedRef = useRef(false); // whether we've fixed a bogus reported duration
   const resumeAfterPopupRef = useRef(false); // was playing when the popup opened?
   const prevPopupRef = useRef<unknown>(null); // detect the translation popup closing
+  // 3-pass study-mode sequencer state (refs so the rAF loop reads live values).
+  const studyRef = useRef<{ running: boolean; p: number; phase: "id1" | "eng" | "id2" }>({
+    running: false,
+    p: 0,
+    phase: "id1",
+  });
 
   // Keep the phone screen awake while audio plays (Screen Wake Lock API).
   // Supported on Android Chrome and iOS Safari 16.4+ (incl. installed PWAs);
@@ -165,6 +189,7 @@ export default function StoryPlayer({
   const tick = () => {
     sync();
     autoScroll();
+    if (studyRef.current.running) studyWatch();
     rafRef.current = requestAnimationFrame(tick);
   };
 
@@ -173,7 +198,10 @@ export default function StoryPlayer({
     rafRef.current = null;
   };
 
+  // In study mode the sequencer owns play/pause/seek (it stops & restarts the
+  // audio at paragraph boundaries), so the native events must not tear it down.
   const onPlay = () => {
+    if (studyRef.current.running) return;
     setPlaying(true);
     stopLoop();
     rafRef.current = requestAnimationFrame(tick);
@@ -181,19 +209,161 @@ export default function StoryPlayer({
     resumeAfterPopupRef.current = false; // a manual play cancels the auto-resume
   };
   const onPause = () => {
+    if (studyRef.current.running) return;
     setPlaying(false);
     stopLoop();
     sync(); // leave the already-spoken words orange
     releaseWakeLock();
   };
   const onEnded = () => {
+    if (studyRef.current.running) return;
     setPlaying(false);
     stopLoop();
     releaseWakeLock();
     pointerRef.current = tokens.length;
     setSpokenCount(tokens.length); // whole story filled
   };
-  const onSeeked = () => sync(); // re-fill correctly after scrubbing (paused or playing)
+  const onSeeked = () => {
+    if (studyRef.current.running) return;
+    sync(); // re-fill correctly after scrubbing (paused or playing)
+  };
+
+  // ---------------- 3-pass study mode sequencer ----------------
+  // Per paragraph: play its Indonesian audio slice → speak the English via the
+  // browser's SpeechSynthesis → play the Indonesian slice again → next paragraph.
+  const beginIndoSegment = (p: number) => {
+    const a = audioRef.current;
+    const range = paraRanges[p];
+    if (!a || !range) {
+      finishStudy();
+      return;
+    }
+    a.currentTime = range.start;
+    a.play().catch(() => {
+      /* ignore */
+    });
+  };
+
+  const speakEnglish = (p: number) => {
+    const text = englishParaTexts[p];
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+    const proceed = () => {
+      if (!studyRef.current.running) return;
+      studyRef.current.phase = "id2";
+      beginIndoSegment(p);
+    };
+    if (!text || !synth) {
+      proceed();
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = 0.95;
+    u.onend = proceed;
+    u.onerror = proceed;
+    synth.cancel();
+    synth.speak(u);
+  };
+
+  const advanceParagraph = () => {
+    const s = studyRef.current;
+    let next = s.p + 1;
+    while (next < paraRanges.length && !paraRanges[next]) next++;
+    if (next >= paraRanges.length) {
+      finishStudy();
+      return;
+    }
+    s.p = next;
+    s.phase = "id1";
+    beginIndoSegment(next);
+  };
+
+  // Called when an Indonesian slice reaches its paragraph end.
+  const onIndoSegmentEnd = () => {
+    const s = studyRef.current;
+    audioRef.current?.pause();
+    if (s.phase === "id1") {
+      s.phase = "eng";
+      speakEnglish(s.p);
+    } else if (s.phase === "id2") {
+      advanceParagraph();
+    }
+  };
+
+  const studyWatch = () => {
+    const s = studyRef.current;
+    const a = audioRef.current;
+    if (!a) return;
+    if (s.phase === "id1" || s.phase === "id2") {
+      const range = paraRanges[s.p];
+      if (range && a.currentTime >= range.end - 0.06) onIndoSegmentEnd();
+    }
+  };
+
+  const finishStudy = () => {
+    studyRef.current.running = false;
+    stopLoop();
+    setPlaying(false);
+    releaseWakeLock();
+  };
+
+  const stopStudy = () => {
+    studyRef.current.running = false;
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* ignore */
+    }
+    audioRef.current?.pause();
+    finishStudy();
+  };
+
+  const startStudy = () => {
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+    // Prime iOS speech within this user gesture so later speak() calls work.
+    if (synth) {
+      try {
+        synth.cancel();
+        const warm = new SpeechSynthesisUtterance(" ");
+        warm.volume = 0;
+        synth.speak(warm);
+      } catch {
+        /* ignore */
+      }
+    }
+    const a = audioRef.current;
+    let p = a ? paragraphAtTime(a.currentTime) : 0;
+    while (p < paraRanges.length && !paraRanges[p]) p++;
+    if (p >= paraRanges.length) return;
+    studyRef.current = { running: true, p, phase: "id1" };
+    setPlaying(true);
+    requestWakeLock();
+    beginIndoSegment(p);
+    stopLoop();
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  const paragraphAtTime = (t: number) => {
+    for (let i = 0; i < paraRanges.length; i++) {
+      const r = paraRanges[i];
+      if (r && t >= r.start && t < r.end) return i;
+    }
+    return 0;
+  };
+
+  const toggleStudyMode = () => {
+    // Switching modes resets playback to a clean paused state.
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* ignore */
+    }
+    studyRef.current.running = false;
+    audioRef.current?.pause();
+    stopLoop();
+    setPlaying(false);
+    setStudyMode((m) => !m);
+  };
 
   // Some browsers (notably iOS Safari) mis-read the duration of stitched audio
   // as just the first clip, which freezes currentTime partway through. If the
@@ -243,7 +413,7 @@ export default function StoryPlayer({
   useEffect(() => {
     const was = prevPopupRef.current;
     prevPopupRef.current = popup;
-    if (was && !popup && resumeAfterPopupRef.current) {
+    if (was && !popup && resumeAfterPopupRef.current && !studyRef.current.running) {
       resumeAfterPopupRef.current = false;
       const a = audioRef.current;
       if (a) {
@@ -256,6 +426,11 @@ export default function StoryPlayer({
   }, [popup]);
 
   const toggle = () => {
+    if (studyMode) {
+      if (studyRef.current.running) stopStudy();
+      else startStudy();
+      return;
+    }
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) audio.play();
@@ -270,10 +445,16 @@ export default function StoryPlayer({
     audio.currentTime = Math.max(0, audio.currentTime - seconds);
   };
 
-  // New audio (e.g. after a regenerate) → reset the fill to the start.
+  // New audio (e.g. after a regenerate) → reset the fill + stop any study run.
   useEffect(() => {
     pointerRef.current = 0;
     primedRef.current = false;
+    studyRef.current.running = false;
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* ignore */
+    }
     setSpokenCount(0);
   }, [audioUrl]);
 
@@ -329,8 +510,9 @@ export default function StoryPlayer({
   const onWordClick = (e: React.MouseEvent<HTMLSpanElement>, wordIndex: number) => {
     const { id, en } = lookupEnglish(wordIndex);
     // Pause playback while reading the translation; remember to resume on close.
+    // (Not in study mode — the sequencer drives playback there.)
     const a = audioRef.current;
-    if (a && !a.paused) {
+    if (a && !a.paused && !studyRef.current.running) {
       a.pause();
       resumeAfterPopupRef.current = true;
     }
@@ -421,15 +603,18 @@ export default function StoryPlayer({
             <audio
               ref={audioRef}
               src={audioUrl}
-              controls
+              controls={!studyMode}
               preload="auto"
-              className="story-audio"
+              className={`story-audio${studyMode ? " story-audio-hidden" : ""}`}
               onPlay={onPlay}
               onPause={onPause}
               onEnded={onEnded}
               onSeeked={onSeeked}
               onLoadedMetadata={onLoadedMetadata}
             />
+            {studyMode && (
+              <span className="story-study-label">3-pass mode · Indonesian → English → Indonesian</span>
+            )}
           </div>
 
           <div className="story-text">
@@ -472,6 +657,17 @@ export default function StoryPlayer({
             onClick={() => setShowTranslation((s) => !s)}
           >
             {showTranslation ? "Hide English" : "Show English"}
+          </button>
+        )}
+        {audioUrl && englishParaTexts.length > 0 && (
+          <button
+            type="button"
+            className={`story-translation-toggle${studyMode ? " story-mode-on" : ""}`}
+            onClick={toggleStudyMode}
+            aria-pressed={studyMode}
+            title="Play each paragraph in Indonesian, then English, then Indonesian again"
+          >
+            {studyMode ? "🔁 ID→EN→ID: on" : "🔁 ID→EN→ID"}
           </button>
         )}
         <button
