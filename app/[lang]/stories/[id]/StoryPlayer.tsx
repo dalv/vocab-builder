@@ -76,6 +76,31 @@ export default function StoryPlayer({
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const lastScrollRef = useRef(0); // timestamp of the last auto-scroll (cooldown)
 
+  // Keep the phone screen awake while audio plays (Screen Wake Lock API).
+  // Supported on Android Chrome and iOS Safari 16.4+ (incl. installed PWAs);
+  // a no-op everywhere else.
+  type WakeLockSentinel = { release: () => Promise<void> };
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const requestWakeLock = async () => {
+    const nav = navigator as Navigator & {
+      wakeLock?: { request: (type: "screen") => Promise<WakeLockSentinel> };
+    };
+    if (!nav.wakeLock || wakeLockRef.current) return;
+    try {
+      wakeLockRef.current = await nav.wakeLock.request("screen");
+    } catch {
+      // e.g. battery-saver or permissions — ignore; playback still works.
+    }
+  };
+  const releaseWakeLock = async () => {
+    try {
+      await wakeLockRef.current?.release();
+    } catch {
+      // already released
+    }
+    wakeLockRef.current = null;
+  };
+
   /**
    * Recompute how many words have been spoken at the current playback time.
    * A word counts as spoken once the audio reaches its start time. Adjusts in
@@ -133,19 +158,38 @@ export default function StoryPlayer({
     setPlaying(true);
     stopLoop();
     rafRef.current = requestAnimationFrame(tick);
+    requestWakeLock();
   };
   const onPause = () => {
     setPlaying(false);
     stopLoop();
     sync(); // leave the already-spoken words orange
+    releaseWakeLock();
   };
   const onEnded = () => {
     setPlaying(false);
     stopLoop();
+    releaseWakeLock();
     pointerRef.current = tokens.length;
     setSpokenCount(tokens.length); // whole story filled
   };
   const onSeeked = () => sync(); // re-fill correctly after scrubbing (paused or playing)
+
+  // The OS releases the wake lock when the tab is hidden; re-acquire it when we
+  // come back if audio is still playing. Release on unmount.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && audioRef.current && !audioRef.current.paused) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      releaseWakeLock();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggle = () => {
     const audio = audioRef.current;
