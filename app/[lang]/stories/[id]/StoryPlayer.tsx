@@ -133,8 +133,8 @@ export default function StoryPlayer({
     const vh = window.innerHeight;
     const isMobile = window.matchMedia("(max-width: 700px)").matches;
     const bottomBar = isMobile ? 104 : 0; // space reserved by the fixed controls
-    const focus = vh * 0.3; // where we park the current line after scrolling
-    const lowerBound = vh * 0.72 - bottomBar; // too low → scroll
+    const focus = vh * 0.25; // where we park the current line after scrolling
+    const lowerBound = vh * 0.50 - bottomBar; // too low → scroll
     const upperBound = vh * 0.1; // too high (e.g. after rewind) → scroll
     if (rect.top <= lowerBound && rect.top >= upperBound) return;
     const now = performance.now();
