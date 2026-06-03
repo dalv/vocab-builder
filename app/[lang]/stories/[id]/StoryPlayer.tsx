@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Token } from "../../../lib/stories/alignment";
 import { buildSentenceMap, splitParagraphs, splitSentences } from "../../../lib/stories/sentences";
 
@@ -26,11 +27,13 @@ function toPieces(text: string): Piece[] {
 }
 
 export default function StoryPlayer({
+  storyId,
   text,
   tokens,
   audioUrl,
   translation,
 }: {
+  storyId: string;
   text: string;
   tokens: Token[];
   audioUrl: string | null;
@@ -69,6 +72,9 @@ export default function StoryPlayer({
   const [spokenCount, setSpokenCount] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState<string | null>(null);
+  const router = useRouter();
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -204,6 +210,35 @@ export default function StoryPlayer({
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = Math.max(0, audio.currentTime - seconds);
+  };
+
+  // New audio (e.g. after a regenerate) → reset the fill to the start.
+  useEffect(() => {
+    pointerRef.current = 0;
+    setSpokenCount(0);
+  }, [audioUrl]);
+
+  // Re-run only the ElevenLabs step for this story, then refresh to pick up the
+  // new audio URL + word timings from the server.
+  const regenerate = async () => {
+    if (regenerating) return;
+    setRegenError(null);
+    setRegenerating(true);
+    audioRef.current?.pause();
+    try {
+      const res = await fetch("/api/stories/regenerate-audio", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ storyId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "Could not regenerate audio");
+      router.refresh();
+    } catch (err) {
+      setRegenError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   // Map a tapped word to its sentence, then to the parallel English sentence.
@@ -354,8 +389,8 @@ export default function StoryPlayer({
         <p className="story-text">{text}</p>
       )}
 
-      {translation && (
-        <div className="story-translation-block">
+      <div className="story-actions">
+        {translation && (
           <button
             type="button"
             className="story-translation-toggle"
@@ -363,9 +398,18 @@ export default function StoryPlayer({
           >
             {showTranslation ? "Hide English" : "Show English"}
           </button>
-          {showTranslation && <p className="story-translation">{translation}</p>}
-        </div>
-      )}
+        )}
+        <button
+          type="button"
+          className="story-translation-toggle story-regen-btn"
+          onClick={regenerate}
+          disabled={regenerating}
+        >
+          {regenerating ? "Regenerating…" : "Regenerate audio"}
+        </button>
+      </div>
+      {regenError && <div className="stories-error">{regenError}</div>}
+      {translation && showTranslation && <p className="story-translation">{translation}</p>}
 
       {popup && (
         <>
