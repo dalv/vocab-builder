@@ -101,6 +101,7 @@ export default async function StoryPage({
       </div>
       <p className="story-topic-sub">{story.topic}</p>
       <StoryPlayer
+        storyId={story.id}
         text={story.story_text ?? ""}
         tokens={story.word_timings ?? []}
         audioUrl={audioUrl}

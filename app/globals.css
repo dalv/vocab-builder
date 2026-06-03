@@ -1351,6 +1351,8 @@ header { position: relative; }
   animation: story-spin 0.8s linear infinite;
 }
 
+.story-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.story-regen-btn:disabled { opacity: 0.6; cursor: default; }
 .story-translation-block { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .story-translation-toggle {
   background: transparent;
