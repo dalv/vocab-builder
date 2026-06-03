@@ -91,6 +91,7 @@ export default function StoryPlayer({
   const pointerRef = useRef(0); // index into tokens, kept in sync with currentTime
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const lastScrollRef = useRef(0); // timestamp of the last auto-scroll (cooldown)
+  const primedRef = useRef(false); // whether we've fixed a bogus reported duration
 
   // Keep the phone screen awake while audio plays (Screen Wake Lock API).
   // Supported on Android Chrome and iOS Safari 16.4+ (incl. installed PWAs);
@@ -191,6 +192,33 @@ export default function StoryPlayer({
   };
   const onSeeked = () => sync(); // re-fill correctly after scrubbing (paused or playing)
 
+  // Some browsers (notably iOS Safari) mis-read the duration of stitched audio
+  // as just the first clip, which freezes currentTime partway through. If the
+  // reported duration is clearly too short vs our timings, force a full scan by
+  // seeking to the end, then snap back to 0. (No-op for correct WAV durations.)
+  const onLoadedMetadata = () => {
+    const a = audioRef.current;
+    if (!a || primedRef.current) return;
+    const lastEnd = tokens.length ? tokens[tokens.length - 1].end : 0;
+    if (!Number.isFinite(a.duration) || a.duration < lastEnd * 0.9) {
+      primedRef.current = true;
+      const reset = () => {
+        a.removeEventListener("seeked", reset);
+        try {
+          a.currentTime = 0;
+        } catch {
+          /* ignore */
+        }
+      };
+      a.addEventListener("seeked", reset);
+      try {
+        a.currentTime = 1e7;
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
   // The OS releases the wake lock when the tab is hidden; re-acquire it when we
   // come back if audio is still playing. Release on unmount.
   useEffect(() => {
@@ -225,6 +253,7 @@ export default function StoryPlayer({
   // New audio (e.g. after a regenerate) → reset the fill to the start.
   useEffect(() => {
     pointerRef.current = 0;
+    primedRef.current = false;
     setSpokenCount(0);
   }, [audioUrl]);
 
@@ -373,6 +402,7 @@ export default function StoryPlayer({
               onPause={onPause}
               onEnded={onEnded}
               onSeeked={onSeeked}
+              onLoadedMetadata={onLoadedMetadata}
             />
           </div>
 

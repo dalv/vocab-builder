@@ -60,6 +60,7 @@ export async function POST(req: Request) {
     let translationEn: string;
     let tokens: Token[];
     let audio: Buffer;
+    let contentType: string;
     let voiceId: string | null;
     let segments: Segment[] | null = null;
 
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
       storyText = tts.text;
       tokens = tts.tokens;
       audio = tts.audio;
+      contentType = tts.contentType;
       translationEn = podcast.turns.map((t) => t.en).join("\n\n");
       segments = podcast.turns.map((t) => ({ speaker: t.speaker, gender: t.gender }));
       voiceId = `${FEMALE_VOICE}/${MALE_VOICE}`;
@@ -85,15 +87,16 @@ export async function POST(req: Request) {
       storyText = tts.text;
       tokens = tts.tokens;
       audio = tts.audio;
+      contentType = tts.contentType;
       translationEn = generated.translation_en;
       voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
     }
 
-    // 3. Upload the mp3 to the private bucket.
-    const audioPath = `${storyId}.mp3`;
+    // 3. Upload the audio to the private bucket (extension matches the format).
+    const audioPath = `${storyId}.${contentType === "audio/wav" ? "wav" : "mp3"}`;
     const { error: uploadError } = await supabase.storage
       .from(AUDIO_BUCKET)
-      .upload(audioPath, audio, { contentType: "audio/mpeg", upsert: true });
+      .upload(audioPath, audio, { contentType, upsert: true });
     if (uploadError) return fail(`Audio upload failed: ${uploadError.message}`);
 
     // 4. Persist everything; the player renders `story_text` and highlights

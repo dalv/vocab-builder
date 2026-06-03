@@ -13,10 +13,20 @@ export const TTS_MODEL = "eleven_multilingual_v2";
  */
 export const TTS_SPEED = 0.75;
 
+// Output formats. Single-voice stories use MP3 (small, single clip plays fine).
+// Multi-voice podcasts use PCM so we can stitch clips into ONE valid WAV file:
+// concatenated MP3s confuse browsers (esp. iOS Safari) into reading only the
+// first clip's duration, which freezes currentTime — and the highlight with it.
+const MP3_FORMAT = "mp3_44100_128";
+const PCM_FORMAT = "pcm_24000";
+const PCM_SAMPLE_RATE = 24000;
+
 export type TtsResult = {
-  /** Decoded MP3 audio, ready to upload to object storage. */
+  /** Encoded audio bytes, ready to upload to object storage. */
   audio: Buffer;
-  /** The story text rebuilt from the alignment characters (what to display). */
+  /** MIME type of `audio` (audio/mpeg or audio/wav). */
+  contentType: string;
+  /** The text rebuilt from the alignment characters (what to display). */
   text: string;
   /** Word tokens with start/end times for highlighting. */
   tokens: Token[];
@@ -32,13 +42,15 @@ type WithTimestampsResponse = {
   normalized_alignment?: unknown;
 };
 
-/** One TTS call with a specific voice → audio + reconstructed text + tokens. */
-async function ttsOne(text: string, voiceId: string): Promise<TtsResult> {
+type RawTts = { audio: Buffer; text: string; tokens: Token[] };
+
+/** One TTS call with a specific voice + output format → raw audio bytes + tokens. */
+async function ttsRequest(text: string, voiceId: string, outputFormat: string): Promise<RawTts> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY is not set");
   if (!voiceId) throw new Error("ElevenLabs voice id is missing");
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps?output_format=${outputFormat}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -67,35 +79,76 @@ async function ttsOne(text: string, voiceId: string): Promise<TtsResult> {
   return { audio: Buffer.from(data.audio_base64, "base64"), text: reconstructed, tokens };
 }
 
+/** Wrap raw 16-bit mono little-endian PCM in a minimal WAV container. */
+function pcmToWav(pcm: Buffer, sampleRate: number): Buffer {
+  const channels = 1;
+  const bitsPerSample = 16;
+  const byteRate = (sampleRate * channels * bitsPerSample) / 8;
+  const blockAlign = (channels * bitsPerSample) / 8;
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16); // PCM fmt chunk size
+  header.writeUInt16LE(1, 20); // audio format = PCM
+  header.writeUInt16LE(channels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+
 /**
- * Synthesize `text` with the configured single voice, with character-level
- * timestamps aggregated to word tokens. Text and tokens come from the SAME
- * character array, so the rendered story and the highlight spans match.
+ * Synthesize `text` with the configured single voice (MP3). Text and tokens come
+ * from the SAME character array, so the rendered story and the highlight match.
  */
 export async function synthesizeWithTimestamps(text: string): Promise<TtsResult> {
   const voiceId = process.env.ELEVENLABS_VOICE_ID;
   if (!voiceId) throw new Error("ELEVENLABS_VOICE_ID is not set");
-  return ttsOne(text, voiceId);
+  const r = await ttsRequest(text, voiceId, MP3_FORMAT);
+  return { audio: r.audio, contentType: "audio/mpeg", text: r.text, tokens: r.tokens };
 }
 
 /**
- * Synthesize a multi-voice dialogue: each turn is spoken by its own voice, then
- * the audio is concatenated and the per-turn timings are offset by the running
- * duration so the word tokens are continuous across the whole conversation.
- * (mp3 frames concatenate fine for sequential playback; any frame-padding drift
- * over a short dialogue is well within word-highlight tolerance.) Turns are
- * joined by a blank line so each becomes its own paragraph in the player.
+ * Multi-voice dialogue → ONE WAV file. Each turn is synthesized as raw PCM with
+ * its own voice; clips are concatenated and wrapped in a single WAV header so
+ * the browser sees the true total duration (the thing that breaks with stitched
+ * MP3). Each turn's timings are offset by the EXACT prior PCM duration, so word
+ * tokens stay perfectly aligned across speakers with no drift.
  */
-export async function synthesizeDialogue(
-  turns: { text: string; voiceId: string }[],
-): Promise<TtsResult> {
+async function dialogueAsWav(turns: { text: string; voiceId: string }[]): Promise<TtsResult> {
+  const pcmParts: Buffer[] = [];
+  const textParts: string[] = [];
+  const tokens: Token[] = [];
+  let offset = 0;
+  const bytesPerSecond = PCM_SAMPLE_RATE * 2; // 16-bit mono
+
+  for (const turn of turns) {
+    const r = await ttsRequest(turn.text, turn.voiceId, PCM_FORMAT);
+    pcmParts.push(r.audio);
+    textParts.push(r.text);
+    for (const t of r.tokens) {
+      tokens.push({ text: t.text, start: t.start + offset, end: t.end + offset });
+    }
+    offset += r.audio.length / bytesPerSecond; // exact clip duration in seconds
+  }
+
+  const wav = pcmToWav(Buffer.concat(pcmParts), PCM_SAMPLE_RATE);
+  return { audio: wav, contentType: "audio/wav", text: textParts.join("\n\n"), tokens };
+}
+
+/** Fallback: stitch MP3 clips (used only if PCM output isn't available). */
+async function dialogueAsMp3(turns: { text: string; voiceId: string }[]): Promise<TtsResult> {
   const audioParts: Buffer[] = [];
   const textParts: string[] = [];
   const tokens: Token[] = [];
   let offset = 0;
-
   for (const turn of turns) {
-    const r = await ttsOne(turn.text, turn.voiceId);
+    const r = await ttsRequest(turn.text, turn.voiceId, MP3_FORMAT);
     audioParts.push(r.audio);
     textParts.push(r.text);
     for (const t of r.tokens) {
@@ -103,6 +156,31 @@ export async function synthesizeDialogue(
     }
     offset += r.tokens.length ? r.tokens[r.tokens.length - 1].end : 0;
   }
+  return {
+    audio: Buffer.concat(audioParts),
+    contentType: "audio/mpeg",
+    text: textParts.join("\n\n"),
+    tokens,
+  };
+}
 
-  return { audio: Buffer.concat(audioParts), text: textParts.join("\n\n"), tokens };
+/**
+ * Synthesize a multi-voice dialogue. Prefers the WAV path (correct duration on
+ * every browser); if PCM output is rejected (some plans gate it), falls back to
+ * MP3 stitching so generation still succeeds.
+ */
+export async function synthesizeDialogue(
+  turns: { text: string; voiceId: string }[],
+): Promise<TtsResult> {
+  try {
+    return await dialogueAsWav(turns);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    const looksLikeFormatGate = /\b(400|401|403)\b/.test(msg) || /format|tier|plan|subscription/i.test(msg);
+    if (looksLikeFormatGate) {
+      console.warn("ElevenLabs PCM unavailable, falling back to MP3 stitching:", msg);
+      return await dialogueAsMp3(turns);
+    }
+    throw err;
+  }
 }
