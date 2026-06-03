@@ -81,7 +81,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
       // Insert the pending row first so the story persists (and is visible on
       // other devices) even while it's still generating.
       const { data: inserted, error: insertError } = await supabase
-        .from("stories")
+        .from("vocab_stories")
         .insert({ topic: trimmed, status: "pending" })
         .select("id")
         .single();

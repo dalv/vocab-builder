@@ -9,7 +9,7 @@ import { synthesizeWithTimestamps } from "../../../lib/stories/elevenlabs";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-const AUDIO_BUCKET = "story-audio";
+const AUDIO_BUCKET = "vocab-story-audio";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
   // Mark the helper that records a failure so we never leave a row in `pending`.
   const fail = async (message: string) => {
-    await supabase.from("stories").update({ status: "failed", error: message }).eq("id", storyId);
+    await supabase.from("vocab_stories").update({ status: "failed", error: message }).eq("id", storyId);
     return NextResponse.json({ error: message }, { status: 500 });
   };
 
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     // 4. Persist everything; the player renders `text` and highlights `tokens`,
     //    both derived from the same alignment characters.
     const { error: updateError } = await supabase
-      .from("stories")
+      .from("vocab_stories")
       .update({
         status: "ready",
         title: generated.title,
