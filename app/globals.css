@@ -1228,9 +1228,42 @@ header { position: relative; }
 .story-word {
   color: var(--text);
   transition: color 0.25s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(196, 88, 26, 0.18);
 }
 .story-word-spoken {
   color: var(--accent);
+}
+
+/* Tap-to-translate popup */
+.story-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: transparent;
+}
+.story-popup {
+  position: fixed;
+  z-index: 201;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(44, 36, 22, 0.18);
+  padding: 12px 14px;
+  max-width: calc(100vw - 24px);
+}
+.story-popup-above { transform: translateY(-100%); }
+.story-popup-id {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--indo);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.story-popup-en {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.45;
 }
 
 .story-translation-block { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
