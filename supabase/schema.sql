@@ -111,3 +111,22 @@ create policy "authed_rw_vocab_story_audio" on storage.objects
   for all to authenticated
   using (bucket_id = 'vocab-story-audio')
   with check (bucket_id = 'vocab-story-audio');
+
+-- Cache of Claude word-choice explanations, keyed on (word, sentence) so the
+-- same tap never costs tokens twice.
+create table if not exists vocab_word_explanations (
+  id               uuid primary key default gen_random_uuid(),
+  word             text not null,
+  indo_sentence    text not null,
+  english_sentence text,
+  explanation      text not null,
+  created_at       timestamptz not null default now(),
+  unique (word, indo_sentence)
+);
+
+alter table vocab_word_explanations enable row level security;
+
+drop policy if exists "authed_rw_vocab_word_explanations" on vocab_word_explanations;
+create policy "authed_rw_vocab_word_explanations" on vocab_word_explanations
+  for all to authenticated
+  using (true) with check (true);
