@@ -92,6 +92,8 @@ export default function StoryPlayer({
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const lastScrollRef = useRef(0); // timestamp of the last auto-scroll (cooldown)
   const primedRef = useRef(false); // whether we've fixed a bogus reported duration
+  const resumeAfterPopupRef = useRef(false); // was playing when the popup opened?
+  const prevPopupRef = useRef<unknown>(null); // detect the translation popup closing
 
   // Keep the phone screen awake while audio plays (Screen Wake Lock API).
   // Supported on Android Chrome and iOS Safari 16.4+ (incl. installed PWAs);
@@ -176,6 +178,7 @@ export default function StoryPlayer({
     stopLoop();
     rafRef.current = requestAnimationFrame(tick);
     requestWakeLock();
+    resumeAfterPopupRef.current = false; // a manual play cancels the auto-resume
   };
   const onPause = () => {
     setPlaying(false);
@@ -234,6 +237,23 @@ export default function StoryPlayer({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // When the translation popup closes (tap-away / scroll / Escape), resume
+  // playback with a 5s rewind — but only if we paused it on open.
+  useEffect(() => {
+    const was = prevPopupRef.current;
+    prevPopupRef.current = popup;
+    if (was && !popup && resumeAfterPopupRef.current) {
+      resumeAfterPopupRef.current = false;
+      const a = audioRef.current;
+      if (a) {
+        a.currentTime = Math.max(0, a.currentTime - 5);
+        a.play().catch(() => {
+          /* autoplay may be blocked; ignore */
+        });
+      }
+    }
+  }, [popup]);
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -308,6 +328,12 @@ export default function StoryPlayer({
 
   const onWordClick = (e: React.MouseEvent<HTMLSpanElement>, wordIndex: number) => {
     const { id, en } = lookupEnglish(wordIndex);
+    // Pause playback while reading the translation; remember to resume on close.
+    const a = audioRef.current;
+    if (a && !a.paused) {
+      a.pause();
+      resumeAfterPopupRef.current = true;
+    }
     setExplain(null);
     setPopup({ id, en, ...placeFrom(e.currentTarget.getBoundingClientRect()) });
   };
