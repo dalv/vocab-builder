@@ -64,10 +64,11 @@ export async function POST(req: Request) {
       tts = await synthesizeWithTimestamps(story.story_text);
     }
 
-    const audioPath = story.audio_path ?? `${storyId}.mp3`;
+    // Extension must match the format (podcast WAV vs story MP3).
+    const audioPath = `${storyId}.${tts.contentType === "audio/wav" ? "wav" : "mp3"}`;
     const { error: uploadError } = await supabase.storage
       .from(AUDIO_BUCKET)
-      .upload(audioPath, tts.audio, { contentType: "audio/mpeg", upsert: true });
+      .upload(audioPath, tts.audio, { contentType: tts.contentType, upsert: true });
     if (uploadError) {
       return NextResponse.json({ error: `Audio upload failed: ${uploadError.message}` }, { status: 500 });
     }
