@@ -118,6 +118,7 @@ export default function StoryPlayer({
     p: 0,
     phase: "id1",
   });
+  const studyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep the phone screen awake while audio plays (Screen Wake Lock API).
   // Supported on Android Chrome and iOS Safari 16.4+ (incl. installed PWAs);
@@ -250,10 +251,18 @@ export default function StoryPlayer({
     const proceed = () => {
       if (!studyRef.current.running) return;
       studyRef.current.phase = "id2";
-      beginIndoSegment(p);
+      // iOS ducks other audio while speaking and restores it on a ~1-2s ramp.
+      // Wait out that ramp before the Indonesian replay so it isn't quiet.
+      if (studyTimerRef.current) clearTimeout(studyTimerRef.current);
+      studyTimerRef.current = setTimeout(() => {
+        if (studyRef.current.running) beginIndoSegment(p);
+      }, 800);
     };
     if (!text || !synth) {
-      proceed();
+      // No English to speak → no ducking, replay immediately.
+      if (!studyRef.current.running) return;
+      studyRef.current.phase = "id2";
+      beginIndoSegment(p);
       return;
     }
     const u = new SpeechSynthesisUtterance(text);
@@ -302,6 +311,8 @@ export default function StoryPlayer({
 
   const finishStudy = () => {
     studyRef.current.running = false;
+    if (studyTimerRef.current) clearTimeout(studyTimerRef.current);
+    studyTimerRef.current = null;
     stopLoop();
     setPlaying(false);
     releaseWakeLock();
