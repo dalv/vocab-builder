@@ -74,6 +74,7 @@ export default function StoryPlayer({
   const rafRef = useRef<number | null>(null);
   const pointerRef = useRef(0); // index into tokens, kept in sync with currentTime
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const lastScrollRef = useRef(0); // timestamp of the last auto-scroll (cooldown)
 
   /**
    * Recompute how many words have been spoken at the current playback time.
@@ -88,14 +89,38 @@ export default function StoryPlayer({
     while (p < tokens.length && tokens[p].start <= t) p++;
     while (p > 0 && tokens[p - 1].start > t) p--;
     pointerRef.current = p;
-    setSpokenCount((prev) => {
-      if (prev !== p && p > 0) wordRefs.current[p - 1]?.scrollIntoView({ block: "nearest" });
-      return prev === p ? prev : p;
-    });
+    setSpokenCount((prev) => (prev === p ? prev : p));
+  };
+
+  /**
+   * Auto-scroll, audiobook-style: keep the current word inside a comfortable
+   * reading band rather than scrolling every line. We only scroll when the
+   * active word drifts BELOW the band (it's read its way down ~several lines)
+   * or ABOVE it (after a rewind/manual scroll), then jump it back to a focus
+   * line high on the screen — leaving the just-read lines as context above and
+   * the upcoming lines below. A cooldown prevents the smooth scroll from
+   * re-triggering itself mid-animation.
+   */
+  const autoScroll = () => {
+    const el = wordRefs.current[pointerRef.current - 1];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const isMobile = window.matchMedia("(max-width: 700px)").matches;
+    const bottomBar = isMobile ? 104 : 0; // space reserved by the fixed controls
+    const focus = vh * 0.3; // where we park the current line after scrolling
+    const lowerBound = vh * 0.72 - bottomBar; // too low → scroll
+    const upperBound = vh * 0.1; // too high (e.g. after rewind) → scroll
+    if (rect.top <= lowerBound && rect.top >= upperBound) return;
+    const now = performance.now();
+    if (now - lastScrollRef.current < 500) return; // mid-animation cooldown
+    lastScrollRef.current = now;
+    window.scrollBy({ top: rect.top - focus, behavior: "smooth" });
   };
 
   const tick = () => {
     sync();
+    autoScroll();
     rafRef.current = requestAnimationFrame(tick);
   };
 
