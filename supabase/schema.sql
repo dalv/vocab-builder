@@ -55,3 +55,51 @@ drop policy if exists "authed_rw_log" on review_log;
 create policy "authed_rw_log" on review_log
   for all to authenticated
   using (true) with check (true);
+
+-- ============================================================================
+-- Story Builder
+-- ============================================================================
+-- AI-generated Indonesian short stories with ElevenLabs audio + word timings.
+-- Stories persist across devices (created on phone, revisited later). Audio
+-- lives in private object storage; clients fetch it via short-lived signed URLs
+-- minted server-side.
+
+create table if not exists stories (
+  id              uuid primary key default gen_random_uuid(),
+  topic           text        not null,
+  status          text        not null default 'pending',  -- pending | ready | failed
+  title           text,                                    -- short English title for the list
+  story_text      text,                                    -- generated Indonesian story
+  translation_en  text,                                    -- faithful English translation
+  audio_path      text,                                    -- key/path in the story-audio bucket
+  word_timings    jsonb,                                   -- [{ text, start, end }]
+  model           text,
+  voice_id        text,
+  error           text,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists stories_created_at_idx on stories (created_at desc);
+
+-- This is a single-user personal site gated by Supabase auth, mirroring
+-- review_state above: any authenticated user has full read/write.
+alter table stories enable row level security;
+
+drop policy if exists "authed_rw_stories" on stories;
+create policy "authed_rw_stories" on stories
+  for all to authenticated
+  using (true) with check (true);
+
+-- ---------------------------------------------------------------------------
+-- Audio storage: a PRIVATE bucket. Clients never read it directly; the server
+-- mints short-lived signed URLs. Only authenticated users can read/write.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('story-audio', 'story-audio', false)
+on conflict (id) do nothing;
+
+drop policy if exists "authed_rw_story_audio" on storage.objects;
+create policy "authed_rw_story_audio" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'story-audio')
+  with check (bucket_id = 'story-audio');
