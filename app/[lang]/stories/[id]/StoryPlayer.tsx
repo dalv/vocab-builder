@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Token } from "../../../lib/stories/alignment";
+import { buildSentenceMap, splitParagraphs, splitSentences } from "../../../lib/stories/sentences";
 
 type Piece =
   | { kind: "ws"; value: string }
@@ -36,6 +37,23 @@ export default function StoryPlayer({
   translation: string;
 }) {
   const pieces = useMemo(() => toPieces(text), [text]);
+
+  // Sentence mapping for tap-to-translate: a tapped word's index → its sentence
+  // → the matching English sentence in the stored translation (no re-translate).
+  const idMap = useMemo(() => buildSentenceMap(text), [text]);
+  const english = useMemo(() => {
+    const paras = splitParagraphs(translation).map(splitSentences);
+    return { paras, flat: paras.flat() };
+  }, [translation]);
+  const [popup, setPopup] = useState<{
+    id: string;
+    en: string;
+    top: number;
+    left: number;
+    width: number;
+    above: boolean;
+  } | null>(null);
+
   // Number of words spoken so far. Words with index < spokenCount are filled
   // orange and STAY orange; the text progressively fills as the audio plays.
   const [spokenCount, setSpokenCount] = useState(0);
@@ -101,6 +119,50 @@ export default function StoryPlayer({
     else audio.pause();
   };
 
+  // Map a tapped word to its sentence, then to the parallel English sentence.
+  const lookupEnglish = (wordIndex: number): { id: string; en: string } => {
+    const wt = idMap.wordToSentence;
+    if (!wt.length) return { id: "", en: translation };
+    const si = wt[Math.min(wordIndex, wt.length - 1)];
+    const info = idMap.sentences[si];
+    const para = english.paras[info?.para ?? 0];
+    const en =
+      para?.[info?.sentInPara ?? 0] ??
+      para?.[(para?.length ?? 1) - 1] ??
+      english.flat[Math.min(si, english.flat.length - 1)] ??
+      translation;
+    return { id: info?.text ?? "", en: en || translation };
+  };
+
+  const onWordClick = (e: React.MouseEvent<HTMLSpanElement>, wordIndex: number) => {
+    const { id, en } = lookupEnglish(wordIndex);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const width = Math.min(320, vw - 24);
+    let left = rect.left;
+    if (left + width > vw - 12) left = vw - 12 - width;
+    if (left < 12) left = 12;
+    const above = rect.top > 220;
+    setPopup({ id, en, left, width, above, top: above ? rect.top - 8 : rect.bottom + 8 });
+  };
+
+  // Dismiss the popup on scroll / resize / Escape so it can't sit stale.
+  useEffect(() => {
+    if (!popup) return;
+    const close = () => setPopup(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [popup]);
+
   return (
     <div className="story-player">
       {audioUrl ? (
@@ -142,6 +204,7 @@ export default function StoryPlayer({
                     wordRefs.current[p.index] = el;
                   }}
                   className={p.index < spokenCount ? "story-word story-word-spoken" : "story-word"}
+                  onClick={(e) => onWordClick(e, p.index)}
                 >
                   {p.value}
                 </span>
@@ -164,6 +227,20 @@ export default function StoryPlayer({
           </button>
           {showTranslation && <p className="story-translation">{translation}</p>}
         </div>
+      )}
+
+      {popup && (
+        <>
+          <div className="story-popup-backdrop" onClick={() => setPopup(null)} />
+          <div
+            className={`story-popup${popup.above ? " story-popup-above" : ""}`}
+            style={{ top: popup.top, left: popup.left, width: popup.width }}
+            role="dialog"
+          >
+            {popup.id && <p className="story-popup-id">{popup.id}</p>}
+            <p className="story-popup-en">{popup.en}</p>
+          </div>
+        </>
       )}
     </div>
   );
