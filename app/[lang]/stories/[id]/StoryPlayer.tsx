@@ -53,6 +53,16 @@ export default function StoryPlayer({
     width: number;
     above: boolean;
   } | null>(null);
+  const [explain, setExplain] = useState<{
+    word: string;
+    top: number;
+    left: number;
+    width: number;
+    above: boolean;
+    loading: boolean;
+    text: string;
+    error: string;
+  } | null>(null);
 
   // Number of words spoken so far. Words with index < spokenCount are filled
   // orange and STAY orange; the text progressively fills as the audio plays.
@@ -134,34 +144,69 @@ export default function StoryPlayer({
     return { id: info?.text ?? "", en: en || translation };
   };
 
-  const onWordClick = (e: React.MouseEvent<HTMLSpanElement>, wordIndex: number) => {
-    const { id, en } = lookupEnglish(wordIndex);
-    const rect = e.currentTarget.getBoundingClientRect();
+  // Place a popup near an element's rect, clamped to the viewport.
+  const placeFrom = (rect: DOMRect) => {
     const vw = window.innerWidth;
     const width = Math.min(320, vw - 24);
     let left = rect.left;
     if (left + width > vw - 12) left = vw - 12 - width;
     if (left < 12) left = 12;
     const above = rect.top > 220;
-    setPopup({ id, en, left, width, above, top: above ? rect.top - 8 : rect.bottom + 8 });
+    return { left, width, above, top: above ? rect.top - 8 : rect.bottom + 8 };
   };
 
-  // Dismiss the popup on scroll / resize / Escape so it can't sit stale.
-  useEffect(() => {
+  const onWordClick = (e: React.MouseEvent<HTMLSpanElement>, wordIndex: number) => {
+    const { id, en } = lookupEnglish(wordIndex);
+    setExplain(null);
+    setPopup({ id, en, ...placeFrom(e.currentTarget.getBoundingClientRect()) });
+  };
+
+  // Second level: tap an Indonesian word INSIDE the translation popup → ask a
+  // fresh Claude session to explain why that word was chosen.
+  const onExplainClick = async (e: React.MouseEvent<HTMLSpanElement>, rawWord: string) => {
+    e.stopPropagation();
     if (!popup) return;
-    const close = () => setPopup(null);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+    const word = rawWord.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+    if (!word) return;
+    const indoSentence = popup.id;
+    const englishSentence = popup.en;
+    setExplain({ word, ...placeFrom(e.currentTarget.getBoundingClientRect()), loading: true, text: "", error: "" });
+    try {
+      const res = await fetch("/api/stories/explain", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ word, indoSentence, englishSentence }),
+      });
+      const data = (await res.json()) as { explanation?: string; error?: string };
+      if (!res.ok) throw new Error(data.error || "Could not explain that word");
+      setExplain((prev) => (prev && prev.word === word ? { ...prev, loading: false, text: data.explanation ?? "" } : prev));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setExplain((prev) => (prev && prev.word === word ? { ...prev, loading: false, error: message } : prev));
+    }
+  };
+
+  // Dismiss popups on scroll / resize / Escape so they can't sit stale.
+  useEffect(() => {
+    if (!popup && !explain) return;
+    const closeAll = () => {
+      setExplain(null);
+      setPopup(null);
     };
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (explain) setExplain(null);
+      else setPopup(null);
+    };
+    window.addEventListener("scroll", closeAll, true);
+    window.addEventListener("resize", closeAll);
     window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", closeAll, true);
+      window.removeEventListener("resize", closeAll);
       window.removeEventListener("keydown", onKey);
     };
-  }, [popup]);
+  }, [popup, explain]);
 
   return (
     <div className="story-player">
@@ -231,14 +276,59 @@ export default function StoryPlayer({
 
       {popup && (
         <>
-          <div className="story-popup-backdrop" onClick={() => setPopup(null)} />
+          <div
+            className="story-popup-backdrop"
+            onClick={() => {
+              setExplain(null);
+              setPopup(null);
+            }}
+          />
           <div
             className={`story-popup${popup.above ? " story-popup-above" : ""}`}
             style={{ top: popup.top, left: popup.left, width: popup.width }}
             role="dialog"
           >
-            {popup.id && <p className="story-popup-id">{popup.id}</p>}
+            {popup.id && (
+              <p className="story-popup-id">
+                {popup.id.split(/(\s+)/).map((tok, k) =>
+                  tok === "" || /^\s+$/.test(tok) ? (
+                    tok
+                  ) : (
+                    <span
+                      key={k}
+                      className="story-popup-word"
+                      onClick={(e) => onExplainClick(e, tok)}
+                    >
+                      {tok}
+                    </span>
+                  ),
+                )}
+              </p>
+            )}
             <p className="story-popup-en">{popup.en}</p>
+            <p className="story-popup-hint">Tap an Indonesian word above to explain the choice</p>
+          </div>
+        </>
+      )}
+
+      {explain && (
+        <>
+          <div className="story-popup-backdrop story-popup-backdrop-2" onClick={() => setExplain(null)} />
+          <div
+            className={`story-popup story-explain${explain.above ? " story-popup-above" : ""}`}
+            style={{ top: explain.top, left: explain.left, width: explain.width }}
+            role="dialog"
+          >
+            <p className="story-explain-word">{explain.word}</p>
+            {explain.loading && (
+              <p className="story-explain-loading">
+                <span className="story-explain-spinner" aria-hidden /> Thinking…
+              </p>
+            )}
+            {explain.error && <p className="story-explain-error">{explain.error}</p>}
+            {!explain.loading && !explain.error && (
+              <p className="story-explain-text">{explain.text}</p>
+            )}
           </div>
         </>
       )}

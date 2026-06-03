@@ -107,3 +107,58 @@ export async function generateStory(topic: string): Promise<GeneratedStory> {
   if (!text) throw new Error("Anthropic returned no text content");
   return parseStoryOutput(text);
 }
+
+/**
+ * Word-choice explainer. A FRESH Claude session (not the one that wrote the
+ * story) explains why a given Indonesian word was used when translating from
+ * English — framed as "why is this a sensible AI translation choice", with
+ * register and common alternatives. Small/fast model, no web search.
+ */
+export const EXPLAIN_MODEL = "claude-haiku-4-5-20251001";
+
+export async function explainWordChoice(args: {
+  word: string;
+  indoSentence: string;
+  englishSentence: string;
+}): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
+
+  const prompt = `You are a friendly Indonesian tutor for an intermediate learner who studies casual, colloquial (Bali-context) Indonesian.
+
+The learner is reading an AI-generated Indonesian translation of an English sentence and tapped one Indonesian word to understand the translator's choice.
+
+English sentence:
+"${args.englishSentence}"
+
+Indonesian translation:
+"${args.indoSentence}"
+
+The tapped word: "${args.word}"
+
+In 2–3 short, plain sentences (no markdown, no bullet points, no headings), explain why "${args.word}" is a sensible, natural choice here. Cover: what it means / does in this sentence; whether it's casual/colloquial or more formal/neutral; and one or two common alternative words that could have been used instead, with the nuance difference. This is an AI translation, so frame it as why this choice makes sense. Do not repeat the full sentences back.`;
+
+  const res = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": ANTHROPIC_VERSION,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: EXPLAIN_MODEL,
+      max_tokens: 400,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Anthropic API ${res.status}: ${body.slice(0, 500)}`);
+  }
+
+  const data = (await res.json()) as { content?: unknown };
+  const text = collectText(data.content);
+  if (!text) throw new Error("Anthropic returned no explanation");
+  return text;
+}
