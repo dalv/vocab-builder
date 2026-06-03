@@ -34,7 +34,7 @@ export default async function StoriesLibraryPage({
   if (!user) return <LoginForm />;
 
   const { data, error } = await supabase
-    .from("stories")
+    .from("vocab_stories")
     .select("id, topic, status, title, error, created_at")
     .order("created_at", { ascending: false });
 

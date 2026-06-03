@@ -8,7 +8,7 @@ import type { Token } from "../../../lib/stories/alignment";
 
 export const dynamic = "force-dynamic";
 
-const AUDIO_BUCKET = "story-audio";
+const AUDIO_BUCKET = "vocab-story-audio";
 
 type StoryRow = {
   id: string;
@@ -37,7 +37,7 @@ export default async function StoryPage({
   if (!user) return <LoginForm />;
 
   const { data } = await supabase
-    .from("stories")
+    .from("vocab_stories")
     .select("id, topic, status, title, story_text, translation_en, audio_path, word_timings, error")
     .eq("id", id)
     .single();

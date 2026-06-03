@@ -57,21 +57,27 @@ create policy "authed_rw_log" on review_log
   using (true) with check (true);
 
 -- ============================================================================
--- Story Builder
+-- Story Builder (vocab-builder app)
 -- ============================================================================
 -- AI-generated Indonesian short stories with ElevenLabs audio + word timings.
 -- Stories persist across devices (created on phone, revisited later). Audio
 -- lives in private object storage; clients fetch it via short-lived signed URLs
 -- minted server-side.
+--
+-- IMPORTANT: this database is shared with another Vercel project that ALREADY
+-- owns a `public.stories` table (menu_title/indo/english/user_id …). To avoid
+-- colliding with it — and accidentally re-policying its data — this feature
+-- uses its own namespaced table `vocab_stories` and bucket `vocab-story-audio`.
+-- Nothing below touches the other project's tables.
 
-create table if not exists stories (
+create table if not exists vocab_stories (
   id              uuid primary key default gen_random_uuid(),
   topic           text        not null,
   status          text        not null default 'pending',  -- pending | ready | failed
   title           text,                                    -- short English title for the list
   story_text      text,                                    -- generated Indonesian story
   translation_en  text,                                    -- faithful English translation
-  audio_path      text,                                    -- key/path in the story-audio bucket
+  audio_path      text,                                    -- key/path in the vocab-story-audio bucket
   word_timings    jsonb,                                   -- [{ text, start, end }]
   model           text,
   voice_id        text,
@@ -79,27 +85,29 @@ create table if not exists stories (
   created_at      timestamptz not null default now()
 );
 
-create index if not exists stories_created_at_idx on stories (created_at desc);
+create index if not exists vocab_stories_created_at_idx on vocab_stories (created_at desc);
 
 -- This is a single-user personal site gated by Supabase auth, mirroring
 -- review_state above: any authenticated user has full read/write.
-alter table stories enable row level security;
+alter table vocab_stories enable row level security;
 
-drop policy if exists "authed_rw_stories" on stories;
-create policy "authed_rw_stories" on stories
+drop policy if exists "authed_rw_vocab_stories" on vocab_stories;
+create policy "authed_rw_vocab_stories" on vocab_stories
   for all to authenticated
   using (true) with check (true);
 
 -- ---------------------------------------------------------------------------
 -- Audio storage: a PRIVATE bucket. Clients never read it directly; the server
 -- mints short-lived signed URLs. Only authenticated users can read/write.
+-- The storage policy is SCOPED to this bucket so it can't affect any other
+-- project's objects in the shared Storage.
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
-values ('story-audio', 'story-audio', false)
+values ('vocab-story-audio', 'vocab-story-audio', false)
 on conflict (id) do nothing;
 
-drop policy if exists "authed_rw_story_audio" on storage.objects;
-create policy "authed_rw_story_audio" on storage.objects
+drop policy if exists "authed_rw_vocab_story_audio" on storage.objects;
+create policy "authed_rw_vocab_story_audio" on storage.objects
   for all to authenticated
-  using (bucket_id = 'story-audio')
-  with check (bucket_id = 'story-audio');
+  using (bucket_id = 'vocab-story-audio')
+  with check (bucket_id = 'vocab-story-audio');
