@@ -1210,7 +1210,27 @@ header { position: relative; }
   transition: opacity 0.15s;
 }
 .story-play-btn:hover { opacity: 0.92; }
-.story-audio { flex: 1; min-width: 200px; height: 40px; }
+.story-audio { flex: 1; min-width: 160px; height: 40px; }
+
+/* Driving-friendly rewind: large tap target, always visible on mobile */
+.story-skip-btn {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: rgba(196, 88, 26, 0.18);
+}
+.story-skip-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.story-skip-btn:active { background: var(--accent); color: #fff; }
 
 .story-text {
   white-space: pre-wrap;

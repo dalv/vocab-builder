@@ -129,6 +129,14 @@ export default function StoryPlayer({
     else audio.pause();
   };
 
+  // Driving-friendly quick rewind. Programmatically setting currentTime fires a
+  // "seeked" event, so the orange fill re-syncs automatically.
+  const rewind = (seconds: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = Math.max(0, audio.currentTime - seconds);
+  };
+
   // Map a tapped word to its sentence, then to the parallel English sentence.
   const lookupEnglish = (wordIndex: number): { id: string; en: string } => {
     const wt = idMap.wordToSentence;
@@ -213,6 +221,22 @@ export default function StoryPlayer({
       {audioUrl ? (
         <>
           <div className="story-controls">
+            <button
+              type="button"
+              className="story-skip-btn"
+              onClick={() => rewind(5)}
+              aria-label="Rewind 5 seconds"
+            >
+              <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden>
+                <path
+                  fill="currentColor"
+                  d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
+                />
+                <text x="12.3" y="16" textAnchor="middle" fontSize="8.5" fontWeight="700" fill="currentColor">
+                  5
+                </text>
+              </svg>
+            </button>
             <button type="button" className="story-play-btn" onClick={toggle} aria-label={playing ? "Pause" : "Play"}>
               {playing ? (
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden>
