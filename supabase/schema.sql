@@ -74,16 +74,21 @@ create table if not exists vocab_stories (
   id              uuid primary key default gen_random_uuid(),
   topic           text        not null,
   status          text        not null default 'pending',  -- pending | ready | failed
+  style           text        not null default 'story',    -- story | podcast
   title           text,                                    -- short English title for the list
   story_text      text,                                    -- generated Indonesian story
   translation_en  text,                                    -- faithful English translation
   audio_path      text,                                    -- key/path in the vocab-story-audio bucket
   word_timings    jsonb,                                   -- [{ text, start, end }]
+  segments        jsonb,                                   -- podcast: [{ speaker, gender }] per paragraph
   model           text,
   voice_id        text,
   error           text,
   created_at      timestamptz not null default now()
 );
+
+alter table vocab_stories add column if not exists style text not null default 'story';
+alter table vocab_stories add column if not exists segments jsonb;
 
 create index if not exists vocab_stories_created_at_idx on vocab_stories (created_at desc);
 
