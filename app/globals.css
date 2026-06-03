@@ -1223,14 +1223,14 @@ header { position: relative; }
   padding: 20px 18px;
   box-shadow: var(--shadow);
 }
+/* Words start in the default text colour and fill orange as they're spoken,
+   staying orange — the story progressively turns orange during playback. */
 .story-word {
-  border-radius: 4px;
-  transition: background 0.1s, color 0.1s;
-  padding: 0 1px;
+  color: var(--text);
+  transition: color 0.25s ease;
 }
-.story-word-active {
-  background: var(--accent);
-  color: #fff;
+.story-word-spoken {
+  color: var(--accent);
 }
 
 .story-translation-block { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }

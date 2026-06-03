@@ -11,7 +11,7 @@ type Piece =
  * Split the story text into render pieces, assigning each non-whitespace chunk
  * the next token index. Because the tokens were produced by the SAME
  * whitespace split (see alignment.ts), the Nth word here is timing token N —
- * what's displayed and what's highlighted line up by construction.
+ * what's displayed and what's filled line up by construction.
  */
 function toPieces(text: string): Piece[] {
   const pieces: Piece[] = [];
@@ -36,33 +36,38 @@ export default function StoryPlayer({
   translation: string;
 }) {
   const pieces = useMemo(() => toPieces(text), [text]);
-  const [active, setActive] = useState(-1);
+  // Number of words spoken so far. Words with index < spokenCount are filled
+  // orange and STAY orange; the text progressively fills as the audio plays.
+  const [spokenCount, setSpokenCount] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
-  const pointerRef = useRef(0); // monotonic index into tokens, advances with time
+  const pointerRef = useRef(0); // index into tokens, kept in sync with currentTime
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
-  const setActiveSafe = (i: number) => {
-    setActive((prev) => {
-      if (prev !== i && i >= 0) {
-        wordRefs.current[i]?.scrollIntoView({ block: "nearest" });
-      }
-      return prev === i ? prev : i;
-    });
-  };
-
-  const tick = () => {
+  /**
+   * Recompute how many words have been spoken at the current playback time.
+   * A word counts as spoken once the audio reaches its start time. Adjusts in
+   * BOTH directions so scrubbing backward un-fills later words.
+   */
+  const sync = () => {
     const audio = audioRef.current;
     if (!audio) return;
     const t = audio.currentTime;
     let p = pointerRef.current;
-    while (p < tokens.length && tokens[p].end < t) p++;
+    while (p < tokens.length && tokens[p].start <= t) p++;
+    while (p > 0 && tokens[p - 1].start > t) p--;
     pointerRef.current = p;
-    if (p < tokens.length && t >= tokens[p].start) setActiveSafe(p);
-    else setActiveSafe(-1);
+    setSpokenCount((prev) => {
+      if (prev !== p && p > 0) wordRefs.current[p - 1]?.scrollIntoView({ block: "nearest" });
+      return prev === p ? prev : p;
+    });
+  };
+
+  const tick = () => {
+    sync();
     rafRef.current = requestAnimationFrame(tick);
   };
 
@@ -79,18 +84,15 @@ export default function StoryPlayer({
   const onPause = () => {
     setPlaying(false);
     stopLoop();
-    setActiveSafe(-1);
+    sync(); // leave the already-spoken words orange
   };
   const onEnded = () => {
     setPlaying(false);
     stopLoop();
-    pointerRef.current = 0;
-    setActiveSafe(-1);
+    pointerRef.current = tokens.length;
+    setSpokenCount(tokens.length); // whole story filled
   };
-  // On any scrub, reset the monotonic pointer so it re-finds the spot forward.
-  const onSeeking = () => {
-    pointerRef.current = 0;
-  };
+  const onSeeked = () => sync(); // re-fill correctly after scrubbing (paused or playing)
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -125,7 +127,7 @@ export default function StoryPlayer({
               onPlay={onPlay}
               onPause={onPause}
               onEnded={onEnded}
-              onSeeking={onSeeking}
+              onSeeked={onSeeked}
             />
           </div>
 
@@ -139,7 +141,7 @@ export default function StoryPlayer({
                   ref={(el) => {
                     wordRefs.current[p.index] = el;
                   }}
-                  className={p.index === active ? "story-word story-word-active" : "story-word"}
+                  className={p.index < spokenCount ? "story-word story-word-spoken" : "story-word"}
                 >
                   {p.value}
                 </span>
