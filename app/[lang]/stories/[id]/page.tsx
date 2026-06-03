@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 
 const AUDIO_BUCKET = "vocab-story-audio";
 
+type Segment = { speaker: string; gender: "F" | "M" };
+
 type StoryRow = {
   id: string;
   topic: string;
@@ -19,6 +21,7 @@ type StoryRow = {
   translation_en: string | null;
   audio_path: string | null;
   word_timings: Token[] | null;
+  segments: Segment[] | null;
   error: string | null;
 };
 
@@ -38,7 +41,9 @@ export default async function StoryPage({
 
   const { data } = await supabase
     .from("vocab_stories")
-    .select("id, topic, status, title, story_text, translation_en, audio_path, word_timings, error")
+    .select(
+      "id, topic, status, title, story_text, translation_en, audio_path, word_timings, segments, error",
+    )
     .eq("id", id)
     .single();
 
@@ -106,6 +111,7 @@ export default async function StoryPage({
         tokens={story.word_timings ?? []}
         audioUrl={audioUrl}
         translation={story.translation_en ?? ""}
+        segments={story.segments}
       />
     </main>
   );

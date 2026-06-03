@@ -19,14 +19,15 @@ type SpeechRecognition = {
 
 const LOADING_STEPS = [
   "Researching your topic on the web…",
-  "Writing your Indonesian story…",
-  "Generating the audio narration…",
+  "Writing it in Indonesian…",
+  "Generating the audio…",
   "Almost there…",
 ];
 
 export default function TopicCapture({ lang }: { lang: string }) {
   const router = useRouter();
   const [topic, setTopic] = useState("");
+  const [style, setStyle] = useState<"story" | "podcast">("story");
   const [listening, setListening] = useState(false);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
@@ -82,7 +83,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
       // other devices) even while it's still generating.
       const { data: inserted, error: insertError } = await supabase
         .from("vocab_stories")
-        .insert({ topic: trimmed, status: "pending" })
+        .insert({ topic: trimmed, status: "pending", style })
         .select("id")
         .single();
       if (insertError || !inserted) {
@@ -92,7 +93,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
       const res = await fetch("/api/stories/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ storyId: inserted.id, topic: trimmed }),
+        body: JSON.stringify({ storyId: inserted.id, topic: trimmed, style }),
       });
 
       // Whether it succeeded or failed, the row now reflects the final state —
@@ -130,7 +131,31 @@ export default function TopicCapture({ lang }: { lang: string }) {
         </Link>
       </div>
 
-      <p className="topic-prompt">What should the story be about? A current event, a place, anything.</p>
+      <p className="topic-prompt">What should it be about? A current event, a place, anything.</p>
+
+      <div className="style-toggle" role="group" aria-label="Style">
+        <button
+          type="button"
+          className={`style-option${style === "story" ? " style-option-active" : ""}`}
+          onClick={() => setStyle("story")}
+          aria-pressed={style === "story"}
+        >
+          📖 Story
+        </button>
+        <button
+          type="button"
+          className={`style-option${style === "podcast" ? " style-option-active" : ""}`}
+          onClick={() => setStyle("podcast")}
+          aria-pressed={style === "podcast"}
+        >
+          🎙️ Podcast
+        </button>
+      </div>
+      <p className="style-hint">
+        {style === "story"
+          ? "A short narrated story about your topic."
+          : "Two people chatting about your topic — one man, one woman."}
+      </p>
 
       <div className="topic-input-row">
         <textarea

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
-import { generateStory, STORY_MODEL } from "../../../lib/stories/anthropic";
-import { synthesizeWithTimestamps } from "../../../lib/stories/elevenlabs";
+import { generateStory, generatePodcast, STORY_MODEL } from "../../../lib/stories/anthropic";
+import { synthesizeWithTimestamps, synthesizeDialogue } from "../../../lib/stories/elevenlabs";
+import type { Token } from "../../../lib/stories/alignment";
 
 // External APIs (web search + TTS) can take a while; do the whole pipeline in
 // one synchronous request. Time spent awaiting external APIs is cheap on
@@ -10,6 +11,14 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 const AUDIO_BUCKET = "vocab-story-audio";
+
+// Podcast voices: a woman and a man. Premade voices that work on free tier
+// (env-overridable). Female falls back to the single-story voice.
+const FEMALE_VOICE =
+  process.env.ELEVENLABS_VOICE_ID_FEMALE ?? process.env.ELEVENLABS_VOICE_ID ?? "EXAVITQu4vr4xnSDxMaL";
+const MALE_VOICE = process.env.ELEVENLABS_VOICE_ID_MALE ?? "JBFqnCBsd6RMkjVDRZzb";
+
+type Segment = { speaker: string; gender: "F" | "M" };
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -24,10 +33,12 @@ export async function POST(req: Request) {
 
   let storyId: string;
   let topic: string;
+  let style: "story" | "podcast";
   try {
-    const body = (await req.json()) as { storyId?: string; topic?: string };
+    const body = (await req.json()) as { storyId?: string; topic?: string; style?: string };
     storyId = (body.storyId ?? "").trim();
     topic = (body.topic ?? "").trim();
+    style = body.style === "podcast" ? "podcast" : "story";
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -42,32 +53,62 @@ export async function POST(req: Request) {
   };
 
   try {
-    const voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
+    // 1 + 2: generate the content (Claude, web search) and synthesize audio
+    //        (ElevenLabs). The two styles differ here; everything after is shared.
+    let title: string;
+    let storyText: string;
+    let translationEn: string;
+    let tokens: Token[];
+    let audio: Buffer;
+    let voiceId: string | null;
+    let segments: Segment[] | null = null;
 
-    // 1. Claude (with web search) → Indonesian story grounded in real facts.
-    const generated = await generateStory(topic);
-
-    // 2. ElevenLabs → audio + character timings aggregated to word tokens.
-    const tts = await synthesizeWithTimestamps(generated.story);
+    if (style === "podcast") {
+      const podcast = await generatePodcast(topic);
+      const tts = await synthesizeDialogue(
+        podcast.turns.map((t) => ({
+          text: t.text,
+          voiceId: t.gender === "M" ? MALE_VOICE : FEMALE_VOICE,
+        })),
+      );
+      title = podcast.title;
+      storyText = tts.text;
+      tokens = tts.tokens;
+      audio = tts.audio;
+      translationEn = podcast.turns.map((t) => t.en).join("\n\n");
+      segments = podcast.turns.map((t) => ({ speaker: t.speaker, gender: t.gender }));
+      voiceId = `${FEMALE_VOICE}/${MALE_VOICE}`;
+    } else {
+      const generated = await generateStory(topic);
+      const tts = await synthesizeWithTimestamps(generated.story);
+      title = generated.title;
+      storyText = tts.text;
+      tokens = tts.tokens;
+      audio = tts.audio;
+      translationEn = generated.translation_en;
+      voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
+    }
 
     // 3. Upload the mp3 to the private bucket.
     const audioPath = `${storyId}.mp3`;
     const { error: uploadError } = await supabase.storage
       .from(AUDIO_BUCKET)
-      .upload(audioPath, tts.audio, { contentType: "audio/mpeg", upsert: true });
+      .upload(audioPath, audio, { contentType: "audio/mpeg", upsert: true });
     if (uploadError) return fail(`Audio upload failed: ${uploadError.message}`);
 
-    // 4. Persist everything; the player renders `text` and highlights `tokens`,
-    //    both derived from the same alignment characters.
+    // 4. Persist everything; the player renders `story_text` and highlights
+    //    `word_timings`, both derived from the same alignment characters.
     const { error: updateError } = await supabase
       .from("vocab_stories")
       .update({
         status: "ready",
-        title: generated.title,
-        story_text: tts.text,
-        translation_en: generated.translation_en,
+        style,
+        title,
+        story_text: storyText,
+        translation_en: translationEn,
         audio_path: audioPath,
-        word_timings: tts.tokens,
+        word_timings: tokens,
+        segments,
         model: STORY_MODEL,
         voice_id: voiceId,
         error: null,

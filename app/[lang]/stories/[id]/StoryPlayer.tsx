@@ -9,21 +9,29 @@ type Piece =
   | { kind: "ws"; value: string }
   | { kind: "word"; value: string; index: number };
 
+type Segment = { speaker: string; gender: "F" | "M" };
+
 /**
- * Split the story text into render pieces, assigning each non-whitespace chunk
- * the next token index. Because the tokens were produced by the SAME
- * whitespace split (see alignment.ts), the Nth word here is timing token N —
- * what's displayed and what's filled line up by construction.
+ * Split the story text into PARAGRAPHS of render pieces, assigning each
+ * non-whitespace chunk the next GLOBAL token index. Paragraphs are separated by
+ * blank lines (podcast turns are joined that way, so paragraph i ↔ segment i).
+ * Because tokens were produced by the SAME whitespace split (see alignment.ts),
+ * the Nth word across all paragraphs is timing token N — display and fill line
+ * up by construction.
  */
-function toPieces(text: string): Piece[] {
-  const pieces: Piece[] = [];
+function toParagraphs(text: string): Piece[][] {
+  const paragraphs: Piece[][] = [];
   let index = 0;
-  for (const part of text.split(/(\s+)/)) {
-    if (part === "") continue;
-    if (/^\s+$/.test(part)) pieces.push({ kind: "ws", value: part });
-    else pieces.push({ kind: "word", value: part, index: index++ });
+  for (const para of text.split(/\n{2,}/)) {
+    const pieces: Piece[] = [];
+    for (const part of para.split(/(\s+)/)) {
+      if (part === "") continue;
+      if (/^\s+$/.test(part)) pieces.push({ kind: "ws", value: part });
+      else pieces.push({ kind: "word", value: part, index: index++ });
+    }
+    if (pieces.length) paragraphs.push(pieces);
   }
-  return pieces;
+  return paragraphs;
 }
 
 export default function StoryPlayer({
@@ -32,14 +40,16 @@ export default function StoryPlayer({
   tokens,
   audioUrl,
   translation,
+  segments,
 }: {
   storyId: string;
   text: string;
   tokens: Token[];
   audioUrl: string | null;
   translation: string;
+  segments: Segment[] | null;
 }) {
-  const pieces = useMemo(() => toPieces(text), [text]);
+  const paragraphs = useMemo(() => toParagraphs(text), [text]);
 
   // Sentence mapping for tap-to-translate: a tapped word's index → its sentence
   // → the matching English sentence in the stored translation (no re-translate).
@@ -366,24 +376,33 @@ export default function StoryPlayer({
             />
           </div>
 
-          <p className="story-text">
-            {pieces.map((p, i) =>
-              p.kind === "ws" ? (
-                <span key={i}>{p.value}</span>
-              ) : (
-                <span
-                  key={i}
-                  ref={(el) => {
-                    wordRefs.current[p.index] = el;
-                  }}
-                  className={p.index < spokenCount ? "story-word story-word-spoken" : "story-word"}
-                  onClick={(e) => onWordClick(e, p.index)}
-                >
-                  {p.value}
-                </span>
-              ),
-            )}
-          </p>
+          <div className="story-text">
+            {paragraphs.map((para, pi) => (
+              <p className="story-para" key={pi}>
+                {segments && segments[pi] && (
+                  <span className={`story-speaker story-speaker-${segments[pi].gender}`}>
+                    {segments[pi].speaker}
+                  </span>
+                )}
+                {para.map((p, i) =>
+                  p.kind === "ws" ? (
+                    <span key={i}>{p.value}</span>
+                  ) : (
+                    <span
+                      key={i}
+                      ref={(el) => {
+                        wordRefs.current[p.index] = el;
+                      }}
+                      className={p.index < spokenCount ? "story-word story-word-spoken" : "story-word"}
+                      onClick={(e) => onWordClick(e, p.index)}
+                    >
+                      {p.value}
+                    </span>
+                  ),
+                )}
+              </p>
+            ))}
+          </div>
         </>
       ) : (
         <p className="story-text">{text}</p>

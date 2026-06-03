@@ -1110,6 +1110,31 @@ header { position: relative; }
 
 /* New Story: topic capture */
 .topic-prompt { color: var(--text-muted); font-size: 15px; margin-bottom: 16px; line-height: 1.5; }
+
+/* Story / Podcast style selector */
+.style-toggle {
+  display: flex;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+}
+.style-option {
+  flex: 1;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.style-option-active { background: var(--accent); color: #fff; }
+.style-hint { margin: 8px 2px 16px; font-size: 13px; color: var(--text-muted); }
 .topic-input-row { display: flex; gap: 10px; align-items: stretch; }
 .topic-input {
   flex: 1;
@@ -1256,7 +1281,6 @@ header { position: relative; }
 }
 
 .story-text {
-  white-space: pre-wrap;
   font-size: 19px;
   line-height: 1.9;
   color: var(--text);
@@ -1266,6 +1290,22 @@ header { position: relative; }
   padding: 20px 18px;
   box-shadow: var(--shadow);
 }
+.story-para { margin: 0; white-space: pre-wrap; }
+.story-para + .story-para { margin-top: 14px; }
+
+/* Podcast speaker label chip */
+.story-speaker {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 1px 9px;
+  border-radius: 999px;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+.story-speaker-F { background: var(--indo-bg); color: var(--indo); }
+.story-speaker-M { background: #e7eef7; color: #2f5d8a; }
 /* Words start in the default text colour and fill orange as they're spoken,
    staying orange — the story progressively turns orange during playback. */
 .story-word {

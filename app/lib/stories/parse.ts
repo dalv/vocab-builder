@@ -11,6 +11,8 @@ export type GeneratedStory = {
 const TITLE = "@@TITLE@@";
 const STORY = "@@STORY@@";
 const TRANSLATION = "@@TRANSLATION@@";
+const DIALOGUE = "@@DIALOGUE@@";
+const TURN_SEP = "|||";
 
 export const OUTPUT_FORMAT_INSTRUCTIONS = `Return your answer in EXACTLY this format, with these literal marker lines and
 nothing before or after them (no markdown, no code fences):
@@ -51,4 +53,62 @@ export function parseStoryOutput(raw: string): GeneratedStory {
     story,
     translation_en,
   };
+}
+
+// ----------------------------- Podcast ------------------------------------
+
+export type PodcastTurn = {
+  gender: "F" | "M";
+  speaker: string;
+  text: string; // Indonesian line
+  en: string; // English translation of the line
+};
+
+export type GeneratedPodcast = {
+  title: string;
+  turns: PodcastTurn[];
+};
+
+export const PODCAST_OUTPUT_FORMAT_INSTRUCTIONS = `Return your answer in EXACTLY this format, with these literal marker lines and
+nothing before or after them (no markdown, no code fences):
+
+${TITLE}
+<short English title>
+${DIALOGUE}
+Then ONE line per spoken turn, alternating between the two speakers, each line
+using this exact pipe format with " ${TURN_SEP} " as the separator:
+
+<F or M> ${TURN_SEP} <speaker name> ${TURN_SEP} <the Indonesian line> ${TURN_SEP} <a faithful English translation>
+
+Use exactly two recurring speakers: one woman (F) and one man (M). Keep every
+turn on a single line (no line breaks inside a turn). Do not put the " ${TURN_SEP} "
+sequence anywhere except as the four-field separator.`;
+
+/**
+ * Parse the marker-delimited podcast output: a title, then one pipe-delimited
+ * turn per line. Malformed lines are skipped defensively.
+ */
+export function parsePodcastOutput(raw: string): GeneratedPodcast {
+  const cleaned = raw.replace(/```[a-z]*\n?/gi, "").trim();
+  const title = section(cleaned, TITLE, DIALOGUE);
+  const dialogue = section(cleaned, DIALOGUE, null);
+
+  const turns: PodcastTurn[] = [];
+  for (const line of dialogue.split(/\n+/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const parts = trimmed.split(TURN_SEP).map((s) => s.trim());
+    if (parts.length < 4) continue; // skip malformed
+    const gender = parts[0].toUpperCase().startsWith("M") ? "M" : "F";
+    const speaker = parts[1];
+    const text = parts[2];
+    const en = parts.slice(3).join(` ${TURN_SEP} `); // tolerate stray separators in EN
+    if (!text) continue;
+    turns.push({ gender, speaker, text, en });
+  }
+
+  if (!turns.length) {
+    throw new Error("Podcast output had no parseable turns");
+  }
+  return { title: title || "Untitled", turns };
 }
