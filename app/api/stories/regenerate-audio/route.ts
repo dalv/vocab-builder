@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
-import { synthesizeWithTimestamps, synthesizeDialogue } from "../../../lib/stories/elevenlabs";
+import {
+  synthesizeWithTimestamps,
+  synthesizeDialogue,
+  synthesizeSentences,
+} from "../../../lib/stories/elevenlabs";
 
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
@@ -52,7 +56,9 @@ export async function POST(req: Request) {
     // Each podcast turn is one paragraph of story_text, paired with its segment.
     let tts;
     const segments = (story.segments ?? null) as Segment[] | null;
-    if (story.style === "podcast" && segments?.length) {
+    if (story.style === "sentences") {
+      tts = await synthesizeSentences(story.story_text.split(/\n{2,}/).filter(Boolean));
+    } else if (story.style === "podcast" && segments?.length) {
       const paragraphs = story.story_text.split(/\n{2,}/);
       tts = await synthesizeDialogue(
         paragraphs.map((text: string, i: number) => ({

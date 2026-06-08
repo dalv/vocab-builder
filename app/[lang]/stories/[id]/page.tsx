@@ -16,6 +16,7 @@ type StoryRow = {
   id: string;
   topic: string;
   status: string;
+  style: string | null;
   title: string | null;
   story_text: string | null;
   translation_en: string | null;
@@ -42,7 +43,7 @@ export default async function StoryPage({
   const { data } = await supabase
     .from("vocab_stories")
     .select(
-      "id, topic, status, title, story_text, translation_en, audio_path, word_timings, segments, error",
+      "id, topic, status, style, title, story_text, translation_en, audio_path, word_timings, segments, error",
     )
     .eq("id", id)
     .single();
@@ -107,6 +108,7 @@ export default async function StoryPage({
       <p className="story-topic-sub">{story.topic}</p>
       <StoryPlayer
         storyId={story.id}
+        style={story.style ?? "story"}
         text={story.story_text ?? ""}
         tokens={story.word_timings ?? []}
         audioUrl={audioUrl}

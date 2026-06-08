@@ -70,6 +70,27 @@ export function buildKnownCorpus(sections: Section[]): CorpusEntry[] {
  * forms in context and can recognise them as familiar. We deliberately do NOT
  * tokenize or stem — the sentences go in whole.
  */
+export type SentencePair = { indo: string; eng: string };
+
+/**
+ * Flat list of every example sentence (Indonesian + English) across the whole
+ * vocabulary, de-duplicated by the Indonesian text. This is the pool the
+ * "Sentences" study style samples from at random.
+ */
+export function allExampleSentences(sections: Section[]): SentencePair[] {
+  const seen = new Set<string>();
+  const out: SentencePair[] = [];
+  for (const entry of buildKnownCorpus(sections)) {
+    for (const ex of entry.examples) {
+      const indo = ex.target.trim();
+      if (!indo || seen.has(indo)) continue;
+      seen.add(indo);
+      out.push({ indo, eng: ex.eng.trim() });
+    }
+  }
+  return out;
+}
+
 export function formatKnownCorpus(entries: CorpusEntry[]): string {
   const lines: string[] = [];
   for (const e of entries) {

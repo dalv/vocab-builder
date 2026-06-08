@@ -141,6 +141,84 @@ async function dialogueAsWav(turns: { text: string; voiceId: string }[]): Promis
   return { audio: wav, contentType: "audio/wav", text: textParts.join("\n\n"), tokens };
 }
 
+/**
+ * Synthesize a list of independent sentences with the single configured voice,
+ * stitched into one WAV (so the browser sees the true total duration). Each
+ * sentence becomes its own paragraph (joined by a blank line), and its word
+ * timings are offset by the exact prior PCM duration. Requests run with bounded
+ * concurrency but results are stitched in the original order. Falls back to MP3
+ * stitching if PCM output is unavailable.
+ */
+export async function synthesizeSentences(sentences: string[]): Promise<TtsResult> {
+  const voiceId = process.env.ELEVENLABS_VOICE_ID;
+  if (!voiceId) throw new Error("ELEVENLABS_VOICE_ID is not set");
+  if (!sentences.length) throw new Error("No sentences to synthesize");
+
+  const CONCURRENCY = 4;
+  let usePcm = true;
+
+  const run = async (format: string) => {
+    const results: RawTts[] = new Array(sentences.length);
+    let cursor = 0;
+    const worker = async () => {
+      for (;;) {
+        const i = cursor++;
+        if (i >= sentences.length) return;
+        results[i] = await ttsRequest(sentences[i], voiceId, format);
+      }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, sentences.length) }, worker),
+    );
+    return results;
+  };
+
+  let results: RawTts[];
+  try {
+    results = await run(PCM_FORMAT);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (/\b(400|401|403)\b/.test(msg) || /format|tier|plan|subscription/i.test(msg)) {
+      console.warn("ElevenLabs PCM unavailable for sentences, falling back to MP3:", msg);
+      usePcm = false;
+      results = await run(MP3_FORMAT);
+    } else {
+      throw err;
+    }
+  }
+
+  const parts: Buffer[] = [];
+  const textParts: string[] = [];
+  const tokens: Token[] = [];
+  let offset = 0;
+  const bytesPerSecond = PCM_SAMPLE_RATE * 2;
+
+  for (const r of results) {
+    parts.push(r.audio);
+    textParts.push(r.text);
+    for (const t of r.tokens) {
+      tokens.push({ text: t.text, start: t.start + offset, end: t.end + offset });
+    }
+    // PCM: exact clip duration from byte length. MP3 fallback: use last token end.
+    offset += usePcm
+      ? r.audio.length / bytesPerSecond
+      : r.tokens.length
+        ? r.tokens[r.tokens.length - 1].end
+        : 0;
+  }
+
+  if (usePcm) {
+    const wav = pcmToWav(Buffer.concat(parts), PCM_SAMPLE_RATE);
+    return { audio: wav, contentType: "audio/wav", text: textParts.join("\n\n"), tokens };
+  }
+  return {
+    audio: Buffer.concat(parts),
+    contentType: "audio/mpeg",
+    text: textParts.join("\n\n"),
+    tokens,
+  };
+}
+
 /** Fallback: stitch MP3 clips (used only if PCM output isn't available). */
 async function dialogueAsMp3(turns: { text: string; voiceId: string }[]): Promise<TtsResult> {
   const audioParts: Buffer[] = [];

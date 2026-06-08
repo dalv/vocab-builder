@@ -1134,7 +1134,27 @@ header { position: relative; }
   transition: background 0.15s, color 0.15s;
 }
 .style-option-active { background: var(--accent); color: #fff; }
+.style-option { font-size: 14px; padding: 11px 8px; }
 .style-hint { margin: 8px 2px 16px; font-size: 13px; color: var(--text-muted); }
+
+/* Sentences: count input */
+.sentences-count-row { display: flex; align-items: center; gap: 12px; }
+.sentences-count-row label { font-size: 15px; color: var(--text); font-weight: 600; }
+.sentences-count-input {
+  width: 92px;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+}
+.sentences-count-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,88,26,0.1); }
+.sentences-count-hint { font-size: 13px; color: var(--text-muted); }
 .topic-input-row { display: flex; gap: 10px; align-items: stretch; }
 .topic-input {
   flex: 1;
@@ -1292,6 +1312,18 @@ header { position: relative; }
 }
 .story-para { margin: 0; white-space: pre-wrap; }
 .story-para + .story-para { margin-top: 14px; }
+
+/* Sentences style: English line above each Indonesian sentence */
+.story-sentence { padding: 12px 0; }
+.story-sentence + .story-sentence { border-top: 1px solid var(--border); margin-top: 0; }
+.story-sentence-en {
+  display: block;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  white-space: normal;
+}
 
 /* Podcast speaker label chip */
 .story-speaker {

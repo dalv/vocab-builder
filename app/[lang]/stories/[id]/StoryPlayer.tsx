@@ -36,6 +36,7 @@ function toParagraphs(text: string): Piece[][] {
 
 export default function StoryPlayer({
   storyId,
+  style,
   text,
   tokens,
   audioUrl,
@@ -43,12 +44,14 @@ export default function StoryPlayer({
   segments,
 }: {
   storyId: string;
+  style: string;
   text: string;
   tokens: Token[];
   audioUrl: string | null;
   translation: string;
   segments: Segment[] | null;
 }) {
+  const isSentences = style === "sentences";
   const paragraphs = useMemo(() => toParagraphs(text), [text]);
 
   // Sentence mapping for tap-to-translate: a tapped word's index → its sentence
@@ -113,11 +116,13 @@ export default function StoryPlayer({
   const resumeAfterPopupRef = useRef(false); // was playing when the popup opened?
   const prevPopupRef = useRef<unknown>(null); // detect the translation popup closing
   // 3-pass study-mode sequencer state (refs so the rAF loop reads live values).
-  const studyRef = useRef<{ running: boolean; p: number; phase: "id1" | "eng" | "id2" }>({
-    running: false,
-    p: 0,
-    phase: "id1",
-  });
+  const studyRef = useRef<{
+    running: boolean;
+    p: number;
+    phaseIdx: number;
+    phases: ("id" | "eng")[];
+    interPause: number;
+  }>({ running: false, p: 0, phaseIdx: 0, phases: [], interPause: 0 });
   const studyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep the phone screen awake while audio plays (Screen Wake Lock API).
@@ -229,14 +234,19 @@ export default function StoryPlayer({
     sync(); // re-fill correctly after scrubbing (paused or playing)
   };
 
-  // ---------------- 3-pass study mode sequencer ----------------
-  // Per paragraph: play its Indonesian audio slice → speak the English via the
-  // browser's SpeechSynthesis → play the Indonesian slice again → next paragraph.
+  // ---------------- Generalized A/B playback sequencer ----------------
+  // Plays each paragraph through a list of phases (no audio is regenerated; we
+  // just seek the existing track and interleave browser speech):
+  //   'id'  = play the paragraph's Indonesian audio slice (highlight follows)
+  //   'eng' = speak the paragraph's English via the browser's SpeechSynthesis
+  // Story/podcast study toggle uses [id, eng, id]; Sentences uses
+  // [eng, id, eng, id] with a pause between sentences.
+
   const beginIndoSegment = (p: number) => {
     const a = audioRef.current;
     const range = paraRanges[p];
     if (!a || !range) {
-      finishStudy();
+      finishSequence();
       return;
     }
     a.currentTime = range.start;
@@ -245,33 +255,52 @@ export default function StoryPlayer({
     });
   };
 
-  const speakEnglish = (p: number) => {
+  const speakEnglish = (p: number, onDone: () => void) => {
     const text = englishParaTexts[p];
     const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
-    const proceed = () => {
-      if (!studyRef.current.running) return;
-      studyRef.current.phase = "id2";
-      // iOS ducks other audio while speaking and restores it on a ~1-2s ramp.
-      // Wait out that ramp before the Indonesian replay so it isn't quiet.
-      if (studyTimerRef.current) clearTimeout(studyTimerRef.current);
-      studyTimerRef.current = setTimeout(() => {
-        if (studyRef.current.running) beginIndoSegment(p);
-      }, 800);
-    };
     if (!text || !synth) {
-      // No English to speak → no ducking, replay immediately.
-      if (!studyRef.current.running) return;
-      studyRef.current.phase = "id2";
-      beginIndoSegment(p);
+      onDone();
       return;
     }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "en-US";
     u.rate = 0.95;
-    u.onend = proceed;
-    u.onerror = proceed;
+    u.onend = onDone;
+    u.onerror = onDone;
     synth.cancel();
     synth.speak(u);
+  };
+
+  const scheduleNext = (fn: () => void, delay: number) => {
+    if (studyTimerRef.current) clearTimeout(studyTimerRef.current);
+    if (delay > 0) {
+      studyTimerRef.current = setTimeout(() => {
+        if (studyRef.current.running) fn();
+      }, delay);
+    } else {
+      fn();
+    }
+  };
+
+  const playCurrentPhase = () => {
+    const s = studyRef.current;
+    if (!s.running) return;
+    if (s.phases[s.phaseIdx] === "id") beginIndoSegment(s.p);
+    else speakEnglish(s.p, onPhaseDone);
+  };
+
+  const onPhaseDone = () => {
+    const s = studyRef.current;
+    if (!s.running) return;
+    s.phaseIdx++;
+    if (s.phaseIdx < s.phases.length) {
+      // iOS ducks other audio while speaking and restores it on a ~1-2s ramp,
+      // so pause briefly before an Indonesian slice that follows English.
+      const duck = s.phases[s.phaseIdx] === "id" && s.phases[s.phaseIdx - 1] === "eng";
+      scheduleNext(playCurrentPhase, duck ? 800 : 0);
+    } else {
+      scheduleNext(advanceParagraph, s.interPause);
+    }
   };
 
   const advanceParagraph = () => {
@@ -279,37 +308,29 @@ export default function StoryPlayer({
     let next = s.p + 1;
     while (next < paraRanges.length && !paraRanges[next]) next++;
     if (next >= paraRanges.length) {
-      finishStudy();
+      finishSequence();
       return;
     }
     s.p = next;
-    s.phase = "id1";
-    beginIndoSegment(next);
+    s.phaseIdx = 0;
+    playCurrentPhase();
   };
 
-  // Called when an Indonesian slice reaches its paragraph end.
-  const onIndoSegmentEnd = () => {
-    const s = studyRef.current;
-    audioRef.current?.pause();
-    if (s.phase === "id1") {
-      s.phase = "eng";
-      speakEnglish(s.p);
-    } else if (s.phase === "id2") {
-      advanceParagraph();
-    }
-  };
-
+  // The rAF loop calls this; detect when an Indonesian slice hits its end.
   const studyWatch = () => {
     const s = studyRef.current;
     const a = audioRef.current;
     if (!a) return;
-    if (s.phase === "id1" || s.phase === "id2") {
+    if (s.phases[s.phaseIdx] === "id") {
       const range = paraRanges[s.p];
-      if (range && a.currentTime >= range.end - 0.06) onIndoSegmentEnd();
+      if (range && a.currentTime >= range.end - 0.06) {
+        a.pause();
+        onPhaseDone();
+      }
     }
   };
 
-  const finishStudy = () => {
+  const finishSequence = () => {
     studyRef.current.running = false;
     if (studyTimerRef.current) clearTimeout(studyTimerRef.current);
     studyTimerRef.current = null;
@@ -318,7 +339,7 @@ export default function StoryPlayer({
     releaseWakeLock();
   };
 
-  const stopStudy = () => {
+  const stopSequence = () => {
     studyRef.current.running = false;
     try {
       window.speechSynthesis?.cancel();
@@ -326,10 +347,18 @@ export default function StoryPlayer({
       /* ignore */
     }
     audioRef.current?.pause();
-    finishStudy();
+    finishSequence();
   };
 
-  const startStudy = () => {
+  const paragraphAtTime = (t: number) => {
+    for (let i = 0; i < paraRanges.length; i++) {
+      const r = paraRanges[i];
+      if (r && t >= r.start && t < r.end) return i;
+    }
+    return 0;
+  };
+
+  const startSequence = (phases: ("id" | "eng")[], interPause: number) => {
     const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
     // Prime iOS speech within this user gesture so later speak() calls work.
     if (synth) {
@@ -346,21 +375,15 @@ export default function StoryPlayer({
     let p = a ? paragraphAtTime(a.currentTime) : 0;
     while (p < paraRanges.length && !paraRanges[p]) p++;
     if (p >= paraRanges.length) return;
-    studyRef.current = { running: true, p, phase: "id1" };
+    studyRef.current = { running: true, p, phaseIdx: 0, phases, interPause };
     setPlaying(true);
     requestWakeLock();
-    beginIndoSegment(p);
     stopLoop();
     rafRef.current = requestAnimationFrame(tick);
+    playCurrentPhase();
   };
 
-  const paragraphAtTime = (t: number) => {
-    for (let i = 0; i < paraRanges.length; i++) {
-      const r = paraRanges[i];
-      if (r && t >= r.start && t < r.end) return i;
-    }
-    return 0;
-  };
+  const startStudy = () => startSequence(["id", "eng", "id"], 0);
 
   const toggleStudyMode = () => {
     // Switching modes resets playback to a clean paused state.
@@ -437,8 +460,15 @@ export default function StoryPlayer({
   }, [popup]);
 
   const toggle = () => {
+    if (isSentences) {
+      // Sentences style: each sentence plays English → Indonesian → English →
+      // Indonesian, with a pause between sentences.
+      if (studyRef.current.running) stopSequence();
+      else startSequence(["eng", "id", "eng", "id"], 700);
+      return;
+    }
     if (studyMode) {
-      if (studyRef.current.running) stopStudy();
+      if (studyRef.current.running) stopSequence();
       else startStudy();
       return;
     }
@@ -614,27 +644,33 @@ export default function StoryPlayer({
             <audio
               ref={audioRef}
               src={audioUrl}
-              controls={!studyMode}
+              controls={!studyMode && !isSentences}
               preload="auto"
-              className={`story-audio${studyMode ? " story-audio-hidden" : ""}`}
+              className={`story-audio${studyMode || isSentences ? " story-audio-hidden" : ""}`}
               onPlay={onPlay}
               onPause={onPause}
               onEnded={onEnded}
               onSeeked={onSeeked}
               onLoadedMetadata={onLoadedMetadata}
             />
-            {studyMode && (
+            {studyMode && !isSentences && (
               <span className="story-study-label">3-pass mode · Indonesian → English → Indonesian</span>
+            )}
+            {isSentences && (
+              <span className="story-study-label">Sentences · English → Indonesian, twice each</span>
             )}
           </div>
 
           <div className="story-text">
             {paragraphs.map((para, pi) => (
-              <p className="story-para" key={pi}>
+              <p className={`story-para${isSentences ? " story-sentence" : ""}`} key={pi}>
                 {segments && segments[pi] && (
                   <span className={`story-speaker story-speaker-${segments[pi].gender}`}>
                     {segments[pi].speaker}
                   </span>
+                )}
+                {isSentences && englishParaTexts[pi] && (
+                  <span className="story-sentence-en">{englishParaTexts[pi]}</span>
                 )}
                 {para.map((p, i) =>
                   p.kind === "ws" ? (
@@ -661,7 +697,8 @@ export default function StoryPlayer({
       )}
 
       <div className="story-actions">
-        {translation && (
+        {/* Sentences already show the English inline, so the toggles are hidden. */}
+        {translation && !isSentences && (
           <button
             type="button"
             className="story-translation-toggle"
@@ -670,7 +707,7 @@ export default function StoryPlayer({
             {showTranslation ? "Hide English" : "Show English"}
           </button>
         )}
-        {audioUrl && englishParaTexts.length > 0 && (
+        {audioUrl && englishParaTexts.length > 0 && !isSentences && (
           <button
             type="button"
             className={`story-translation-toggle${studyMode ? " story-mode-on" : ""}`}
