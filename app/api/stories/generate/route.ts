@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
 import { generateStory, generatePodcast, STORY_MODEL } from "../../../lib/stories/anthropic";
-import { synthesizeWithTimestamps, synthesizeDialogue } from "../../../lib/stories/elevenlabs";
+import {
+  synthesizeWithTimestamps,
+  synthesizeDialogue,
+  synthesizeSentences,
+} from "../../../lib/stories/elevenlabs";
+import { allExampleSentences } from "../../../lib/stories/knownCorpus";
+import { indonesianSections } from "../../../[lang]/indonesian-data";
 import type { Token } from "../../../lib/stories/alignment";
 
 // External APIs (web search + TTS) can take a while; do the whole pipeline in
@@ -20,6 +26,16 @@ const MALE_VOICE = process.env.ELEVENLABS_VOICE_ID_MALE ?? "JBFqnCBsd6RMkjVDRZzb
 
 type Segment = { speaker: string; gender: "F" | "M" };
 
+/** Fisher–Yates shuffle (returns a new array). */
+function shuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
 
@@ -33,16 +49,26 @@ export async function POST(req: Request) {
 
   let storyId: string;
   let topic: string;
-  let style: "story" | "podcast";
+  let style: "story" | "podcast" | "sentences";
+  let count: number;
   try {
-    const body = (await req.json()) as { storyId?: string; topic?: string; style?: string };
+    const body = (await req.json()) as {
+      storyId?: string;
+      topic?: string;
+      style?: string;
+      count?: number;
+    };
     storyId = (body.storyId ?? "").trim();
     topic = (body.topic ?? "").trim();
-    style = body.style === "podcast" ? "podcast" : "story";
+    style =
+      body.style === "podcast" ? "podcast" : body.style === "sentences" ? "sentences" : "story";
+    count = Math.floor(Number(body.count) || 0);
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  if (!storyId || !topic) {
+  // Sentences don't need a topic (they're sampled from the corpus); the other
+  // styles do.
+  if (!storyId || (style !== "sentences" && !topic)) {
     return NextResponse.json({ error: "storyId and topic are required" }, { status: 400 });
   }
 
@@ -64,7 +90,20 @@ export async function POST(req: Request) {
     let voiceId: string | null;
     let segments: Segment[] | null = null;
 
-    if (style === "podcast") {
+    if (style === "sentences") {
+      // No Claude call: sample example sentences straight from the corpus.
+      const pool = allExampleSentences(indonesianSections);
+      const n = Math.max(1, Math.min(count || 10, pool.length));
+      const picked = shuffle(pool).slice(0, n);
+      const tts = await synthesizeSentences(picked.map((s) => s.indo));
+      title = `${n} sentence${n === 1 ? "" : "s"}`;
+      storyText = tts.text; // Indonesian sentences, one per paragraph
+      tokens = tts.tokens;
+      audio = tts.audio;
+      contentType = tts.contentType;
+      translationEn = picked.map((s) => s.eng).join("\n\n"); // aligned per paragraph
+      voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
+    } else if (style === "podcast") {
       const podcast = await generatePodcast(topic);
       const tts = await synthesizeDialogue(
         podcast.turns.map((t) => ({
