@@ -21,6 +21,9 @@ const MP3_FORMAT = "mp3_44100_128";
 const PCM_FORMAT = "pcm_24000";
 const PCM_SAMPLE_RATE = 24000;
 
+// Free-tier ElevenLabs allows a maximum of 2 concurrent requests; stay under it.
+const MAX_CONCURRENCY = 2;
+
 export type TtsResult = {
   /** Encoded audio bytes, ready to upload to object storage. */
   audio: Buffer;
@@ -56,19 +59,26 @@ async function ttsRequest(
   if (!voiceId) throw new Error("ElevenLabs voice id is missing");
 
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps?output_format=${outputFormat}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "xi-api-key": apiKey,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      text,
-      model_id: TTS_MODEL,
-      language_code: lang,
-      voice_settings: { speed: TTS_SPEED },
-    }),
-  });
+
+  // Retry on 429 (e.g. a brief concurrency collision) with exponential backoff.
+  let res!: Response;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: TTS_MODEL,
+        language_code: lang,
+        voice_settings: { speed: TTS_SPEED },
+      }),
+    });
+    if (res.status !== 429) break;
+    await new Promise((r) => setTimeout(r, 600 * 2 ** attempt)); // 0.6s,1.2s,2.4s,4.8s
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -179,7 +189,6 @@ export async function synthesizeSentencesWithEnglish(
     tasks.push({ role: "indo", sentence: i, text: p.indo, voice: idVoice, lang: "id" });
   });
 
-  const CONCURRENCY = 4;
   let usePcm = true;
   const run = async (format: string) => {
     const results: RawTts[] = new Array(tasks.length);
@@ -191,7 +200,7 @@ export async function synthesizeSentencesWithEnglish(
         results[i] = await ttsRequest(tasks[i].text, tasks[i].voice, format, tasks[i].lang);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENCY, tasks.length) }, worker));
     return results;
   };
 
