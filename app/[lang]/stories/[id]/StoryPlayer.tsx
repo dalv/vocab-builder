@@ -9,7 +9,13 @@ type Piece =
   | { kind: "ws"; value: string }
   | { kind: "word"; value: string; index: number };
 
-type Segment = { speaker: string; gender: "F" | "M" };
+type Segment = {
+  speaker?: string;
+  gender?: "F" | "M";
+  // Sentences style: the audio [start,end] of this sentence's spoken English.
+  engStart?: number;
+  engEnd?: number;
+};
 
 /**
  * Split the story text into PARAGRAPHS of render pieces, assigning each
@@ -94,6 +100,18 @@ export default function StoryPlayer({
 
   // English paragraph texts, parallel to the rendered paragraphs.
   const englishParaTexts = useMemo(() => splitParagraphs(translation), [translation]);
+  // Sentences style: audio range of each sentence's spoken English (from the
+  // ElevenLabs bilingual track). null when not available (older stories).
+  const engRanges = useMemo(() => {
+    if (!isSentences || !segments) return null;
+    const ranges = segments.map((s) =>
+      typeof s?.engStart === "number" && typeof s?.engEnd === "number"
+        ? { start: s.engStart, end: s.engEnd }
+        : null,
+    );
+    return ranges.some(Boolean) ? ranges : null;
+  }, [isSentences, segments]);
+
   // Audio time range [start, end] for each rendered paragraph, from word timings.
   const paraRanges = useMemo(() => {
     return paragraphs.map((para) => {
@@ -116,11 +134,15 @@ export default function StoryPlayer({
   const resumeAfterPopupRef = useRef(false); // was playing when the popup opened?
   const prevPopupRef = useRef<unknown>(null); // detect the translation popup closing
   // 3-pass study-mode sequencer state (refs so the rAF loop reads live values).
+  // Phase kinds: 'id' = play the Indonesian audio slice; 'eng-audio' = play the
+  // sentence's English audio slice (Sentences style); 'eng-speak' = browser
+  // speech (story/podcast study mode, or older sentences without English audio).
+  type Phase = "id" | "eng-audio" | "eng-speak";
   const studyRef = useRef<{
     running: boolean;
     p: number;
     phaseIdx: number;
-    phases: ("id" | "eng")[];
+    phases: Phase[];
     interPause: number;
   }>({ running: false, p: 0, phaseIdx: 0, phases: [], interPause: 0 });
   const studyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -242,9 +264,16 @@ export default function StoryPlayer({
   // Story/podcast study toggle uses [id, eng, id]; Sentences uses
   // [eng, id, eng, id] with a pause between sentences.
 
-  const beginIndoSegment = (p: number) => {
+  // The audio range for the current phase: the Indonesian slice, or (Sentences)
+  // the English slice. null for a browser-speech phase.
+  const rangeForPhase = (phase: Phase, p: number) => {
+    if (phase === "id") return paraRanges[p];
+    if (phase === "eng-audio") return engRanges ? engRanges[p] : null;
+    return null;
+  };
+
+  const beginAudioSegment = (range: { start: number; end: number } | null) => {
     const a = audioRef.current;
-    const range = paraRanges[p];
     if (!a || !range) {
       finishSequence();
       return;
@@ -285,8 +314,9 @@ export default function StoryPlayer({
   const playCurrentPhase = () => {
     const s = studyRef.current;
     if (!s.running) return;
-    if (s.phases[s.phaseIdx] === "id") beginIndoSegment(s.p);
-    else speakEnglish(s.p, onPhaseDone);
+    const phase = s.phases[s.phaseIdx];
+    if (phase === "eng-speak") speakEnglish(s.p, onPhaseDone);
+    else beginAudioSegment(rangeForPhase(phase, s.p));
   };
 
   const onPhaseDone = () => {
@@ -294,9 +324,10 @@ export default function StoryPlayer({
     if (!s.running) return;
     s.phaseIdx++;
     if (s.phaseIdx < s.phases.length) {
-      // iOS ducks other audio while speaking and restores it on a ~1-2s ramp,
-      // so pause briefly before an Indonesian slice that follows English.
-      const duck = s.phases[s.phaseIdx] === "id" && s.phases[s.phaseIdx - 1] === "eng";
+      // After BROWSER speech, iOS ducks other audio and restores it on a ~1-2s
+      // ramp, so pause before the next audio slice. All-ElevenLabs phases (eng
+      // audio → id) need no such pause.
+      const duck = s.phases[s.phaseIdx - 1] === "eng-speak";
       scheduleNext(playCurrentPhase, duck ? 800 : 0);
     } else {
       scheduleNext(advanceParagraph, s.interPause);
@@ -316,13 +347,14 @@ export default function StoryPlayer({
     playCurrentPhase();
   };
 
-  // The rAF loop calls this; detect when an Indonesian slice hits its end.
+  // The rAF loop calls this; detect when an audio slice hits its end.
   const studyWatch = () => {
     const s = studyRef.current;
     const a = audioRef.current;
     if (!a) return;
-    if (s.phases[s.phaseIdx] === "id") {
-      const range = paraRanges[s.p];
+    const phase = s.phases[s.phaseIdx];
+    if (phase === "id" || phase === "eng-audio") {
+      const range = rangeForPhase(phase, s.p);
       if (range && a.currentTime >= range.end - 0.06) {
         a.pause();
         onPhaseDone();
@@ -358,7 +390,7 @@ export default function StoryPlayer({
     return 0;
   };
 
-  const startSequence = (phases: ("id" | "eng")[], interPause: number) => {
+  const startSequence = (phases: Phase[], interPause: number) => {
     const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
     // Prime iOS speech within this user gesture so later speak() calls work.
     if (synth) {
@@ -383,7 +415,15 @@ export default function StoryPlayer({
     playCurrentPhase();
   };
 
-  const startStudy = () => startSequence(["id", "eng", "id"], 0);
+  const startStudy = () => startSequence(["id", "eng-speak", "id"], 0);
+
+  // Sentences: English → Indonesian → English → Indonesian per sentence, with a
+  // pause between. Uses ElevenLabs English audio when available (one track),
+  // else falls back to browser speech for older stories.
+  const startSentences = () => {
+    const eng: Phase = engRanges ? "eng-audio" : "eng-speak";
+    startSequence([eng, "id", eng, "id"], 700);
+  };
 
   const toggleStudyMode = () => {
     // Switching modes resets playback to a clean paused state.
@@ -461,10 +501,8 @@ export default function StoryPlayer({
 
   const toggle = () => {
     if (isSentences) {
-      // Sentences style: each sentence plays English → Indonesian → English →
-      // Indonesian, with a pause between sentences.
       if (studyRef.current.running) stopSequence();
-      else startSequence(["eng", "id", "eng", "id"], 700);
+      else startSentences();
       return;
     }
     if (studyMode) {

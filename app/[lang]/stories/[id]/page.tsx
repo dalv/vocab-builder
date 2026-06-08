@@ -10,7 +10,12 @@ export const dynamic = "force-dynamic";
 
 const AUDIO_BUCKET = "vocab-story-audio";
 
-type Segment = { speaker: string; gender: "F" | "M" };
+type Segment = {
+  speaker?: string;
+  gender?: "F" | "M";
+  engStart?: number;
+  engEnd?: number;
+};
 
 type StoryRow = {
   id: string;

@@ -4,7 +4,7 @@ import { generateStory, generatePodcast, STORY_MODEL } from "../../../lib/storie
 import {
   synthesizeWithTimestamps,
   synthesizeDialogue,
-  synthesizeSentences,
+  synthesizeSentencesWithEnglish,
 } from "../../../lib/stories/elevenlabs";
 import { allExampleSentences } from "../../../lib/stories/knownCorpus";
 import { indonesianSections } from "../../../[lang]/indonesian-data";
@@ -24,7 +24,9 @@ const FEMALE_VOICE =
   process.env.ELEVENLABS_VOICE_ID_FEMALE ?? process.env.ELEVENLABS_VOICE_ID ?? "EXAVITQu4vr4xnSDxMaL";
 const MALE_VOICE = process.env.ELEVENLABS_VOICE_ID_MALE ?? "JBFqnCBsd6RMkjVDRZzb";
 
-type Segment = { speaker: string; gender: "F" | "M" };
+// Podcast segments carry speaker/gender; sentences segments carry the English
+// audio range. Both live in the same jsonb column, keyed by style.
+type Segment = { speaker: string; gender: "F" | "M" } | { engStart: number; engEnd: number };
 
 /** Fisher–Yates shuffle (returns a new array). */
 function shuffle<T>(arr: T[]): T[] {
@@ -95,13 +97,17 @@ export async function POST(req: Request) {
       const pool = allExampleSentences(indonesianSections);
       const n = Math.max(1, Math.min(count || 10, pool.length));
       const picked = shuffle(pool).slice(0, n);
-      const tts = await synthesizeSentences(picked.map((s) => s.indo));
+      // Both languages synthesized by ElevenLabs into one continuous track.
+      const tts = await synthesizeSentencesWithEnglish(
+        picked.map((s) => ({ indo: s.indo, eng: s.eng })),
+      );
       title = `${n} sentence${n === 1 ? "" : "s"}`;
       storyText = tts.text; // Indonesian sentences, one per paragraph
       tokens = tts.tokens;
       audio = tts.audio;
       contentType = tts.contentType;
       translationEn = picked.map((s) => s.eng).join("\n\n"); // aligned per paragraph
+      segments = tts.engRanges.map((r) => ({ engStart: r.start, engEnd: r.end }));
       voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
     } else if (style === "podcast") {
       const podcast = await generatePodcast(topic);
