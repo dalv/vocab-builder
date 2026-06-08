@@ -3,7 +3,7 @@ import { createClient } from "../../../lib/supabase/server";
 import {
   synthesizeWithTimestamps,
   synthesizeDialogue,
-  synthesizeSentences,
+  synthesizeSentencesWithEnglish,
 } from "../../../lib/stories/elevenlabs";
 
 export const maxDuration = 120;
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
   const { data: story } = await supabase
     .from("vocab_stories")
-    .select("story_text, audio_path, style, segments")
+    .select("story_text, translation_en, audio_path, style, segments")
     .eq("id", storyId)
     .single();
   if (!story?.story_text) {
@@ -55,9 +55,16 @@ export async function POST(req: Request) {
     // Podcasts re-synthesize per turn (two voices); stories use the single voice.
     // Each podcast turn is one paragraph of story_text, paired with its segment.
     let tts;
+    // For sentences, regeneration also refreshes the per-sentence English ranges.
+    let newSegments: object[] | undefined;
     const segments = (story.segments ?? null) as Segment[] | null;
     if (story.style === "sentences") {
-      tts = await synthesizeSentences(story.story_text.split(/\n{2,}/).filter(Boolean));
+      const indo = story.story_text.split(/\n{2,}/).filter(Boolean);
+      const eng = (story.translation_en ?? "").split(/\n{2,}/);
+      const pairs = indo.map((t: string, i: number) => ({ indo: t, eng: eng[i] ?? "" }));
+      const r = await synthesizeSentencesWithEnglish(pairs);
+      tts = r;
+      newSegments = r.engRanges.map((rg) => ({ engStart: rg.start, engEnd: rg.end }));
     } else if (story.style === "podcast" && segments?.length) {
       const paragraphs = story.story_text.split(/\n{2,}/);
       tts = await synthesizeDialogue(
@@ -87,6 +94,7 @@ export async function POST(req: Request) {
         voice_id: process.env.ELEVENLABS_VOICE_ID ?? null,
         status: "ready",
         error: null,
+        ...(newSegments ? { segments: newSegments } : {}),
       })
       .eq("id", storyId);
     if (updateError) {

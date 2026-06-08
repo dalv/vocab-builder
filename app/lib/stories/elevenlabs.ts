@@ -44,8 +44,13 @@ type WithTimestampsResponse = {
 
 type RawTts = { audio: Buffer; text: string; tokens: Token[] };
 
-/** One TTS call with a specific voice + output format → raw audio bytes + tokens. */
-async function ttsRequest(text: string, voiceId: string, outputFormat: string): Promise<RawTts> {
+/** One TTS call with a specific voice + output format + language → raw bytes + tokens. */
+async function ttsRequest(
+  text: string,
+  voiceId: string,
+  outputFormat: string,
+  lang: string = "id",
+): Promise<RawTts> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY is not set");
   if (!voiceId) throw new Error("ElevenLabs voice id is missing");
@@ -60,7 +65,7 @@ async function ttsRequest(text: string, voiceId: string, outputFormat: string): 
     body: JSON.stringify({
       text,
       model_id: TTS_MODEL,
-      language_code: "id",
+      language_code: lang,
       voice_settings: { speed: TTS_SPEED },
     }),
   });
@@ -141,35 +146,52 @@ async function dialogueAsWav(turns: { text: string; voiceId: string }[]): Promis
   return { audio: wav, contentType: "audio/wav", text: textParts.join("\n\n"), tokens };
 }
 
+export type SentencesTtsResult = TtsResult & {
+  /** Audio time range [start, end] of the spoken English for each sentence. */
+  engRanges: { start: number; end: number }[];
+};
+
 /**
- * Synthesize a list of independent sentences with the single configured voice,
- * stitched into one WAV (so the browser sees the true total duration). Each
- * sentence becomes its own paragraph (joined by a blank line), and its word
- * timings are offset by the exact prior PCM duration. Requests run with bounded
- * concurrency but results are stitched in the original order. Falls back to MP3
- * stitching if PCM output is unavailable.
+ * Synthesize a list of {indo, eng} sentence pairs into ONE continuous track,
+ * with BOTH languages spoken by ElevenLabs. Per sentence the track contains the
+ * English clip followed by the Indonesian clip (each once): [en0, id0, en1, id1,
+ * …]. We return:
+ *   - `tokens`: word timings for the INDONESIAN words only (so the existing
+ *     1:1 display↔highlight mapping holds — English isn't highlighted);
+ *   - `engRanges`: the audio [start,end] of each sentence's English clip, so the
+ *     player can replay just that slice.
+ * The player's sequencer then plays en→id→en→id per sentence by seeking these
+ * ranges — no second audio source, no browser speech. Falls back to MP3.
  */
-export async function synthesizeSentences(sentences: string[]): Promise<TtsResult> {
-  const voiceId = process.env.ELEVENLABS_VOICE_ID;
-  if (!voiceId) throw new Error("ELEVENLABS_VOICE_ID is not set");
-  if (!sentences.length) throw new Error("No sentences to synthesize");
+export async function synthesizeSentencesWithEnglish(
+  pairs: { indo: string; eng: string }[],
+): Promise<SentencesTtsResult> {
+  const idVoice = process.env.ELEVENLABS_VOICE_ID;
+  const enVoice = process.env.ELEVENLABS_VOICE_ID_EN ?? idVoice;
+  if (!idVoice) throw new Error("ELEVENLABS_VOICE_ID is not set");
+  if (!pairs.length) throw new Error("No sentences to synthesize");
+
+  // Playback-order task list: english then indonesian for each sentence.
+  type Task = { role: "eng" | "indo"; sentence: number; text: string; voice: string; lang: string };
+  const tasks: Task[] = [];
+  pairs.forEach((p, i) => {
+    tasks.push({ role: "eng", sentence: i, text: p.eng, voice: enVoice!, lang: "en" });
+    tasks.push({ role: "indo", sentence: i, text: p.indo, voice: idVoice, lang: "id" });
+  });
 
   const CONCURRENCY = 4;
   let usePcm = true;
-
   const run = async (format: string) => {
-    const results: RawTts[] = new Array(sentences.length);
+    const results: RawTts[] = new Array(tasks.length);
     let cursor = 0;
     const worker = async () => {
       for (;;) {
         const i = cursor++;
-        if (i >= sentences.length) return;
-        results[i] = await ttsRequest(sentences[i], voiceId, format);
+        if (i >= tasks.length) return;
+        results[i] = await ttsRequest(tasks[i].text, tasks[i].voice, format, tasks[i].lang);
       }
     };
-    await Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, sentences.length) }, worker),
-    );
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, worker));
     return results;
   };
 
@@ -188,35 +210,38 @@ export async function synthesizeSentences(sentences: string[]): Promise<TtsResul
   }
 
   const parts: Buffer[] = [];
-  const textParts: string[] = [];
+  const indoTextParts: string[] = [];
   const tokens: Token[] = [];
+  const engRanges: { start: number; end: number }[] = new Array(pairs.length);
   let offset = 0;
   const bytesPerSecond = PCM_SAMPLE_RATE * 2;
 
-  for (const r of results) {
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i];
+    const r = results[i];
     parts.push(r.audio);
-    textParts.push(r.text);
-    for (const t of r.tokens) {
-      tokens.push({ text: t.text, start: t.start + offset, end: t.end + offset });
-    }
-    // PCM: exact clip duration from byte length. MP3 fallback: use last token end.
-    offset += usePcm
+    const dur = usePcm
       ? r.audio.length / bytesPerSecond
       : r.tokens.length
         ? r.tokens[r.tokens.length - 1].end
         : 0;
+    if (t.role === "eng") {
+      engRanges[t.sentence] = { start: offset, end: offset + dur };
+    } else {
+      indoTextParts.push(r.text);
+      for (const tok of r.tokens) {
+        tokens.push({ text: tok.text, start: tok.start + offset, end: tok.end + offset });
+      }
+    }
+    offset += dur;
   }
 
+  const text = indoTextParts.join("\n\n");
   if (usePcm) {
     const wav = pcmToWav(Buffer.concat(parts), PCM_SAMPLE_RATE);
-    return { audio: wav, contentType: "audio/wav", text: textParts.join("\n\n"), tokens };
+    return { audio: wav, contentType: "audio/wav", text, tokens, engRanges };
   }
-  return {
-    audio: Buffer.concat(parts),
-    contentType: "audio/mpeg",
-    text: textParts.join("\n\n"),
-    tokens,
-  };
+  return { audio: Buffer.concat(parts), contentType: "audio/mpeg", text, tokens, engRanges };
 }
 
 /** Fallback: stitch MP3 clips (used only if PCM output isn't available). */
