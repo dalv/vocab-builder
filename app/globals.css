@@ -1176,7 +1176,7 @@ header { position: relative; }
 .style-hint { margin: 8px 2px 16px; font-size: 13px; color: var(--text-muted); }
 
 /* Sentences: count input */
-.sentences-count-row { display: flex; align-items: center; gap: 12px; }
+.sentences-count-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
 .sentences-count-row label { font-size: 15px; color: var(--text); font-weight: 600; }
 .sentences-count-input {
   width: 92px;

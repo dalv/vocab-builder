@@ -76,9 +76,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
 
   async function generate() {
     const trimmed = topic.trim();
-    // Sentences don't need a topic; the label is derived from the count.
-    const label = sentencesMode ? `${n} random sentences` : trimmed;
-    if ((!sentencesMode && !trimmed) || busy) return;
+    if (!trimmed || busy) return;
     setError(null);
     setBusy(true);
     setStep(0);
@@ -89,7 +87,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
       // other devices) even while it's still generating.
       const { data: inserted, error: insertError } = await supabase
         .from("vocab_stories")
-        .insert({ topic: label, status: "pending", style })
+        .insert({ topic: trimmed, status: "pending", style })
         .select("id")
         .single();
       if (insertError || !inserted) {
@@ -99,7 +97,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
       const res = await fetch("/api/stories/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ storyId: inserted.id, topic: label, style, count: n }),
+        body: JSON.stringify({ storyId: inserted.id, topic: trimmed, style, count: n }),
       });
 
       // Whether it succeeded or failed, the row now reflects the final state —
@@ -120,9 +118,9 @@ export default function TopicCapture({ lang }: { lang: string }) {
       <main className="stories-wrap">
         <div className="story-loading">
           <div className="story-spinner" aria-hidden />
-          <p className="story-loading-topic">“{sentencesMode ? `${n} random sentences` : topic.trim()}”</p>
+          <p className="story-loading-topic">“{topic.trim()}”</p>
           <p className="story-loading-step">
-            {sentencesMode ? "Picking sentences and generating audio…" : LOADING_STEPS[step]}
+            {sentencesMode ? "Writing sentences and generating audio…" : LOADING_STEPS[step]}
           </p>
           <p className="story-loading-note">This can take a minute or two — hang tight.</p>
         </div>
@@ -141,7 +139,7 @@ export default function TopicCapture({ lang }: { lang: string }) {
 
       <p className="topic-prompt">
         {sentencesMode
-          ? "Practice random example sentences from your vocabulary."
+          ? "A topic for everyday sentences — e.g. riding a motorbike, ordering at a warung."
           : "What should it be about? A current event, a place, anything."}
       </p>
 
@@ -176,10 +174,37 @@ export default function TopicCapture({ lang }: { lang: string }) {
           ? "A short narrated story about your topic."
           : style === "podcast"
             ? "Two people chatting about your topic — one man, one woman."
-            : "Random sentences, each read English → Indonesian, twice."}
+            : "Fresh everyday sentences about your topic; the Indonesian is read twice each."}
       </p>
 
-      {sentencesMode ? (
+      <div className="topic-input-row">
+        <textarea
+          className="topic-input"
+          placeholder={
+            sentencesMode
+              ? "e.g. riding a motorbike, renting a room, discussing weekend plans…"
+              : "e.g. new rules for tourists in Bali, the surf at Uluwatu, a recipe for nasi goreng…"
+          }
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          rows={3}
+        />
+        {speechSupported && (
+          <button
+            type="button"
+            className={`topic-mic${listening ? " topic-mic-on" : ""}`}
+            onClick={toggleMic}
+            aria-label={listening ? "Stop listening" : "Speak your topic"}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden>
+              <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+              <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {sentencesMode && (
         <div className="sentences-count-row">
           <label htmlFor="sentence-count">How many sentences?</label>
           <input
@@ -194,29 +219,6 @@ export default function TopicCapture({ lang }: { lang: string }) {
           />
           <span className="sentences-count-hint">1–400</span>
         </div>
-      ) : (
-        <div className="topic-input-row">
-          <textarea
-            className="topic-input"
-            placeholder="e.g. new rules for tourists in Bali, the surf at Uluwatu, a recipe for nasi goreng…"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            rows={3}
-          />
-          {speechSupported && (
-            <button
-              type="button"
-              className={`topic-mic${listening ? " topic-mic-on" : ""}`}
-              onClick={toggleMic}
-              aria-label={listening ? "Stop listening" : "Speak your topic"}
-            >
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden>
-                <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
-                <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z" />
-              </svg>
-            </button>
-          )}
-        </div>
       )}
 
       {error && <div className="stories-error">{error}</div>}
@@ -225,9 +227,9 @@ export default function TopicCapture({ lang }: { lang: string }) {
         type="button"
         className="topic-generate"
         onClick={generate}
-        disabled={!sentencesMode && !topic.trim()}
+        disabled={!topic.trim()}
       >
-        {sentencesMode ? "Generate" : "Generate story"}
+        {sentencesMode ? "Generate sentences" : "Generate story"}
       </button>
     </main>
   );

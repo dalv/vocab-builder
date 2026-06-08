@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
-import { generateStory, generatePodcast, STORY_MODEL } from "../../../lib/stories/anthropic";
+import {
+  generateStory,
+  generatePodcast,
+  generateSentences,
+  STORY_MODEL,
+} from "../../../lib/stories/anthropic";
 import {
   synthesizeWithTimestamps,
   synthesizeDialogue,
   synthesizeSentences,
 } from "../../../lib/stories/elevenlabs";
-import { allExampleSentences } from "../../../lib/stories/knownCorpus";
-import { indonesianSections } from "../../../[lang]/indonesian-data";
 import type { Token } from "../../../lib/stories/alignment";
 
 // External APIs (web search + TTS) can take a while; do the whole pipeline in
@@ -24,19 +27,7 @@ const FEMALE_VOICE =
   process.env.ELEVENLABS_VOICE_ID_FEMALE ?? process.env.ELEVENLABS_VOICE_ID ?? "EXAVITQu4vr4xnSDxMaL";
 const MALE_VOICE = process.env.ELEVENLABS_VOICE_ID_MALE ?? "JBFqnCBsd6RMkjVDRZzb";
 
-// Podcast segments carry speaker/gender; sentences segments carry the English
-// audio range. Both live in the same jsonb column, keyed by style.
-type Segment = { speaker: string; gender: "F" | "M" } | { engStart: number; engEnd: number };
-
-/** Fisher–Yates shuffle (returns a new array). */
-function shuffle<T>(arr: T[]): T[] {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+type Segment = { speaker: string; gender: "F" | "M" };
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -68,9 +59,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  // Sentences don't need a topic (they're sampled from the corpus); the other
-  // styles do.
-  if (!storyId || (style !== "sentences" && !topic)) {
+  if (!storyId || !topic) {
     return NextResponse.json({ error: "storyId and topic are required" }, { status: 400 });
   }
 
@@ -93,18 +82,17 @@ export async function POST(req: Request) {
     let segments: Segment[] | null = null;
 
     if (style === "sentences") {
-      // No Claude call: sample example sentences straight from the corpus.
-      const pool = allExampleSentences(indonesianSections);
-      const n = Math.max(1, Math.min(count || 10, pool.length));
-      const picked = shuffle(pool).slice(0, n);
-      // Only the Indonesian is synthesized; playback reads each sentence twice.
-      const tts = await synthesizeSentences(picked.map((s) => s.indo));
-      title = `${n} sentence${n === 1 ? "" : "s"}`;
+      // Claude generates fresh, repetitive, colloquial sentences on the topic;
+      // only the Indonesian is synthesized (playback reads each sentence twice).
+      const n = Math.max(1, Math.min(count || 10, 400));
+      const pairs = await generateSentences(topic, n);
+      const tts = await synthesizeSentences(pairs.map((p) => p.indo));
+      title = topic.slice(0, 80);
       storyText = tts.text; // Indonesian sentences, one per paragraph
       tokens = tts.tokens;
       audio = tts.audio;
       contentType = tts.contentType;
-      translationEn = picked.map((s) => s.eng).join("\n\n"); // English shown as text
+      translationEn = pairs.map((p) => p.eng).join("\n\n"); // English shown as text
       voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
     } else if (style === "podcast") {
       const podcast = await generatePodcast(topic);
