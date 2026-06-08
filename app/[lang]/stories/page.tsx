@@ -29,6 +29,10 @@ export default async function StoriesLibraryPage({
 
   return (
     <main className="stories-wrap">
+      <Link href={`/${lang}`} className="stories-back-link stories-back-top">
+        ← Vocabulary
+      </Link>
+
       <div className="stories-head">
         <h2>Story Builder</h2>
         <Link href={`/${lang}/stories/new`} className="stories-new-btn">
