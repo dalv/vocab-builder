@@ -417,12 +417,10 @@ export default function StoryPlayer({
 
   const startStudy = () => startSequence(["id", "eng-speak", "id"], 0);
 
-  // Sentences: English once, then Indonesian twice per sentence, with a pause
-  // between sentences. Uses ElevenLabs English audio when available (one track),
-  // else falls back to browser speech for older stories.
+  // Sentences: read the Indonesian twice per sentence, with a pause between
+  // sentences. (The English is shown as text only — not read aloud.)
   const startSentences = () => {
-    const eng: Phase = engRanges ? "eng-audio" : "eng-speak";
-    startSequence([eng, "id", "id"], 700);
+    startSequence(["id", "id"], 700);
   };
 
   const toggleStudyMode = () => {
@@ -695,7 +693,7 @@ export default function StoryPlayer({
               <span className="story-study-label">3-pass mode · Indonesian → English → Indonesian</span>
             )}
             {isSentences && (
-              <span className="story-study-label">Sentences · English, then Indonesian ×2</span>
+              <span className="story-study-label">Sentences · Indonesian ×2</span>
             )}
           </div>
 

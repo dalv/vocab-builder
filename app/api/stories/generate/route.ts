@@ -4,7 +4,7 @@ import { generateStory, generatePodcast, STORY_MODEL } from "../../../lib/storie
 import {
   synthesizeWithTimestamps,
   synthesizeDialogue,
-  synthesizeSentencesWithEnglish,
+  synthesizeSentences,
 } from "../../../lib/stories/elevenlabs";
 import { allExampleSentences } from "../../../lib/stories/knownCorpus";
 import { indonesianSections } from "../../../[lang]/indonesian-data";
@@ -97,17 +97,14 @@ export async function POST(req: Request) {
       const pool = allExampleSentences(indonesianSections);
       const n = Math.max(1, Math.min(count || 10, pool.length));
       const picked = shuffle(pool).slice(0, n);
-      // Both languages synthesized by ElevenLabs into one continuous track.
-      const tts = await synthesizeSentencesWithEnglish(
-        picked.map((s) => ({ indo: s.indo, eng: s.eng })),
-      );
+      // Only the Indonesian is synthesized; playback reads each sentence twice.
+      const tts = await synthesizeSentences(picked.map((s) => s.indo));
       title = `${n} sentence${n === 1 ? "" : "s"}`;
       storyText = tts.text; // Indonesian sentences, one per paragraph
       tokens = tts.tokens;
       audio = tts.audio;
       contentType = tts.contentType;
-      translationEn = picked.map((s) => s.eng).join("\n\n"); // aligned per paragraph
-      segments = tts.engRanges.map((r) => ({ engStart: r.start, engEnd: r.end }));
+      translationEn = picked.map((s) => s.eng).join("\n\n"); // English shown as text
       voiceId = process.env.ELEVENLABS_VOICE_ID ?? null;
     } else if (style === "podcast") {
       const podcast = await generatePodcast(topic);
