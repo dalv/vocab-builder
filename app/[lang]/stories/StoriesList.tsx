@@ -139,9 +139,25 @@ function SwipeRow({
             <span className="stories-item-errmsg">{story.error}</span>
           )}
         </div>
-        <div className="stories-item-meta">
-          <span className={`stories-badge stories-badge-${story.status}`}>{story.status}</span>
-          <span className="stories-item-date">{formatDate(story.created_at)}</span>
+        <div className="stories-item-right">
+          <div className="stories-item-meta">
+            <span className={`stories-badge stories-badge-${story.status}`}>{story.status}</span>
+            <span className="stories-item-date">{formatDate(story.created_at)}</span>
+          </div>
+          <button
+            type="button"
+            className="story-delete-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              del();
+            }}
+            disabled={deleting}
+            aria-label={`Delete ${story.title ?? story.topic}`}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden>
+              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm-3 6h12l-1 12H7L6 9zm3 2v8h2v-8H9zm4 0v8h2v-8h-2z" />
+            </svg>
+          </button>
         </div>
       </div>
     </li>

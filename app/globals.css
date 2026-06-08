@@ -1042,6 +1042,7 @@ header { position: relative; }
   white-space: nowrap;
 }
 .stories-back-link:hover { color: var(--accent); }
+.stories-back-top { display: inline-block; margin-bottom: 14px; }
 
 .stories-empty {
   color: var(--text-muted);
@@ -1100,6 +1101,29 @@ header { position: relative; }
   font-size: 12px;
   color: var(--text-muted);
   opacity: 0.7;
+}
+.stories-item-right { display: flex; align-items: center; gap: 10px; }
+
+/* Delete button: visible on desktop (mobile uses swipe instead). */
+.story-delete-btn { display: none; }
+@media (min-width: 701px) {
+  .story-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: #b03a2e;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .story-delete-btn:hover { background: #fdecea; border-color: #f5b7b1; }
+  .story-delete-btn:disabled { opacity: 0.5; cursor: default; }
+  .stories-swipe-hint { display: none; }
 }
 .stories-item-link {
   display: flex;
@@ -1276,7 +1300,29 @@ header { position: relative; }
 /* Player */
 .story-topic-sub { color: var(--text-muted); font-size: 14px; margin: -8px 0 16px; }
 .story-player { display: flex; flex-direction: column; gap: 20px; }
-.story-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+/* Playback controls (rewind + play + scrubber) are pinned to the bottom of the
+   screen and sticky on scroll — on desktop and mobile alike. */
+.story-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  margin: 0 auto;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 14px rgba(44, 36, 22, 0.12);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+.story-controls .story-audio { min-width: 0; }
+/* Reserve room so the last lines + translation toggle clear the fixed bar —
+   only on pages that actually have a player. */
+.stories-wrap:has(.story-player) { padding-bottom: 128px; }
 .story-play-btn {
   flex-shrink: 0;
   width: 52px;
@@ -1315,28 +1361,6 @@ header { position: relative; }
 .story-skip-btn:hover { background: var(--accent-light); border-color: var(--accent); }
 .story-skip-btn:active { background: var(--accent); color: #fff; }
 
-/* On mobile, pin all playback controls (rewind + play + scrubber) to the
-   bottom of the screen so they're always reachable while reading/driving. */
-@media (max-width: 700px) {
-  .story-controls {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 150;
-    margin: 0 auto;
-    max-width: 720px;
-    flex-wrap: nowrap;
-    gap: 10px;
-    background: var(--card-bg);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -2px 14px rgba(44, 36, 22, 0.12);
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  }
-  .story-controls .story-audio { min-width: 0; }
-  /* Reserve room so the last lines + translation toggle clear the fixed bar. */
-  .stories-wrap { padding-bottom: 128px; }
-}
 
 .story-text {
   font-size: 19px;
