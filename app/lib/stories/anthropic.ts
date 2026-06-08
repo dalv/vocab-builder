@@ -3,13 +3,16 @@ import { buildKnownCorpus, formatKnownCorpus } from "./knownCorpus";
 import {
   parseStoryOutput,
   parsePodcastOutput,
+  parseSentencesOutput,
   OUTPUT_FORMAT_INSTRUCTIONS,
   PODCAST_OUTPUT_FORMAT_INSTRUCTIONS,
+  SENTENCES_OUTPUT_FORMAT_INSTRUCTIONS,
   type GeneratedStory,
   type GeneratedPodcast,
+  type SentencePairOut,
 } from "./parse";
 
-export type { GeneratedStory, GeneratedPodcast } from "./parse";
+export type { GeneratedStory, GeneratedPodcast, SentencePairOut } from "./parse";
 
 /**
  * Story-generation model. Kept as a single constant so it's a one-line change
@@ -96,6 +99,73 @@ function buildSystemBlocks() {
 
 function buildPodcastSystemBlocks() {
   return [{ type: "text", text: PODCAST_SYSTEM_INSTRUCTIONS }, corpusBlock()];
+}
+
+const SENTENCES_SYSTEM_INSTRUCTIONS = `You generate short, useful, everyday INDONESIAN sentences for an intermediate
+learner living in Bali. The learner gives a TOPIC and a COUNT; produce that many
+sentences about the topic that real people would actually say in day-to-day life
+in Bali.
+
+REGISTER & LEVEL (strict):
+- Informal/colloquial — the way people actually talk on the street, NOT formal or
+  textbook/news style.
+- Use colloquial particles naturally where they fit: sih, dong, kok, aja, lah,
+  deh, nih, kan.
+- Use the colloquial affixation the learner studies (e.g. -in suffix like
+  "beliin", "liatin"; di- passives; ke-...-an). Conversational Indonesian often
+  drops the me- prefix in speech.
+- Intermediate, practical, natural. Mix statements and questions a real person
+  would use (asking prices, asking where things are, giving opinions, etc.).
+
+REPETITION (very important):
+- Build the whole set around a small CORE of topic vocabulary, and REUSE those
+  same key words and phrases across many of the sentences, in different contexts,
+  so the learner sees them repeatedly. Heavy, deliberate repetition is the goal —
+  not maximum variety.
+
+VOCABULARY:
+- Below is the learner's KNOWN VOCABULARY (headwords AND example sentences).
+  Lean on it heavily; introduce new words only where the topic genuinely needs them.
+
+OUTPUT:
+${SENTENCES_OUTPUT_FORMAT_INSTRUCTIONS}`;
+
+/**
+ * Generate `count` fresh, repetitive, colloquial everyday Indonesian sentences
+ * about `topic`, each with an English translation. No web search (these are
+ * practical phrases, not fact-dependent).
+ */
+export async function generateSentences(
+  topic: string,
+  count: number,
+): Promise<SentencePairOut[]> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
+
+  const res = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": ANTHROPIC_VERSION,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: STORY_MODEL,
+      max_tokens: 8192,
+      system: [{ type: "text", text: SENTENCES_SYSTEM_INSTRUCTIONS }, corpusBlock()],
+      messages: [{ role: "user", content: `Topic: ${topic}\nNumber of sentences: ${count}` }],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Anthropic API ${res.status}: ${body.slice(0, 500)}`);
+  }
+
+  const data = (await res.json()) as { content?: unknown };
+  const text = collectText(data.content);
+  if (!text) throw new Error("Anthropic returned no text content");
+  return parseSentencesOutput(text).slice(0, count);
 }
 
 /**

@@ -55,6 +55,43 @@ export function parseStoryOutput(raw: string): GeneratedStory {
   };
 }
 
+// ---------------------------- Sentences -----------------------------------
+
+const SENTENCES = "@@SENTENCES@@";
+
+export type SentencePairOut = { indo: string; eng: string };
+
+export const SENTENCES_OUTPUT_FORMAT_INSTRUCTIONS = `Return ONLY this — no markdown, no code fences, no numbering:
+
+${SENTENCES}
+Then ONE line per sentence, each in this exact pipe format:
+
+<Indonesian sentence> ${TURN_SEP} <English translation>
+
+No blank lines, no extra commentary.`;
+
+/**
+ * Parse the marker-delimited generated sentences. Tolerant of a missing marker,
+ * stray code fences, and leading list numbering/bullets. Skips malformed lines.
+ */
+export function parseSentencesOutput(raw: string): SentencePairOut[] {
+  const cleaned = raw.replace(/```[a-z]*\n?/gi, "").trim();
+  const body = cleaned.includes(SENTENCES) ? section(cleaned, SENTENCES, null) : cleaned;
+
+  const out: SentencePairOut[] = [];
+  for (const line of body.split(/\n+/)) {
+    const trimmed = line.trim();
+    if (!trimmed || !trimmed.includes(TURN_SEP)) continue;
+    const parts = trimmed.split(TURN_SEP).map((s) => s.trim());
+    if (parts.length < 2) continue;
+    const indo = parts[0].replace(/^\s*(?:\d+[.)]|[-*•])\s*/, "").trim();
+    const eng = parts.slice(1).join(` ${TURN_SEP} `).trim();
+    if (indo && eng) out.push({ indo, eng });
+  }
+  if (!out.length) throw new Error("No parseable sentences in output");
+  return out;
+}
+
 // ----------------------------- Podcast ------------------------------------
 
 export type PodcastTurn = {
