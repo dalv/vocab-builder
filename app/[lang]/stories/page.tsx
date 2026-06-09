@@ -22,7 +22,7 @@ export default async function StoriesLibraryPage({
 
   const { data, error } = await supabase
     .from("vocab_stories")
-    .select("id, topic, status, title, error, created_at")
+    .select("id, topic, status, style, title, error, created_at")
     .order("created_at", { ascending: false });
 
   const stories = (data ?? []) as StoryItem[];

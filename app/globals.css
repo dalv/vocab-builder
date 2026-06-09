@@ -1141,6 +1141,28 @@ header { position: relative; }
 }
 .stories-item-link:hover { border-color: var(--accent); box-shadow: 0 3px 10px rgba(44,36,22,0.1); }
 .stories-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* Per-style visual coding: a colored chip + a matching left accent border. */
+.story-style-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-bottom: 4px;
+}
+.story-style-story     { background: #eef0f7; color: #3a4a8a; }
+.story-style-podcast   { background: #f3e9f6; color: #834a8a; }
+.story-style-sentences { background: var(--indo-bg); color: var(--indo); }
+
+.swipe-content.stories-item-link { border-left-width: 4px; }
+.story-style-row-story     { border-left-color: #6678c4; }
+.story-style-row-podcast   { border-left-color: #a06aae; }
+.story-style-row-sentences { border-left-color: var(--indo); }
 .stories-item-title { font-weight: 700; font-size: 16px; color: var(--text); }
 .stories-item-topic {
   font-size: 13px;
