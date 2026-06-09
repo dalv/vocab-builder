@@ -40,23 +40,59 @@ function toParagraphs(text: string): Piece[][] {
   return paragraphs;
 }
 
-export default function StoryPlayer({
-  storyId,
-  style,
-  text,
-  tokens,
-  audioUrl,
-  translation,
-  segments,
-}: {
+type Playable = {
   storyId: string;
   style: string;
+  title: string;
+  topic: string;
   text: string;
   tokens: Token[];
   audioUrl: string | null;
   translation: string;
   segments: Segment[] | null;
+};
+
+export default function StoryPlayer({
+  storyId: initialStoryId,
+  style: initialStyle,
+  initialTitle,
+  topic: initialTopic,
+  text: initialText,
+  tokens: initialTokens,
+  audioUrl: initialAudioUrl,
+  translation: initialTranslation,
+  segments: initialSegments,
+  playlistIds,
+  lang,
+}: {
+  storyId: string;
+  style: string;
+  initialTitle: string;
+  topic: string;
+  text: string;
+  tokens: Token[];
+  audioUrl: string | null;
+  translation: string;
+  segments: Segment[] | null;
+  playlistIds: string[];
+  lang: string;
 }) {
+  // The current item is held in state so a playlist can swap to the next one
+  // IN PLACE (same <audio> element → keeps the iOS unlock; navigation would
+  // lose it). The body below destructures back to the original names.
+  const [playable, setPlayable] = useState<Playable>({
+    storyId: initialStoryId,
+    style: initialStyle,
+    title: initialTitle,
+    topic: initialTopic,
+    text: initialText,
+    tokens: initialTokens,
+    audioUrl: initialAudioUrl,
+    translation: initialTranslation,
+    segments: initialSegments,
+  });
+  const { storyId, style, title, topic, text, tokens, audioUrl, translation, segments } = playable;
+
   const isSentences = style === "sentences";
   const paragraphs = useMemo(() => toParagraphs(text), [text]);
 
@@ -96,7 +132,40 @@ export default function StoryPlayer({
   // "3-pass" study mode: per paragraph, play Indonesian audio → speak the
   // English (browser TTS) → play the Indonesian audio again, then next paragraph.
   const [studyMode, setStudyMode] = useState(false);
+  // Playlist behaviour at end of audio. Mutually exclusive; persisted so the
+  // choice carries across page loads. Refs mirror them for the finish callbacks.
+  const [autoReplay, setAutoReplay] = useState(false);
+  const [autoNext, setAutoNext] = useState(false);
+  const autoReplayRef = useRef(false);
+  const autoNextRef = useRef(false);
+  const pendingAutoplayRef = useRef(false); // start playback once new audio loads
   const router = useRouter();
+
+  useEffect(() => {
+    setAutoReplay(localStorage.getItem("vocab.autoReplay") === "1");
+    setAutoNext(localStorage.getItem("vocab.autoNext") === "1");
+  }, []);
+  useEffect(() => {
+    autoReplayRef.current = autoReplay;
+    localStorage.setItem("vocab.autoReplay", autoReplay ? "1" : "0");
+  }, [autoReplay]);
+  useEffect(() => {
+    autoNextRef.current = autoNext;
+    localStorage.setItem("vocab.autoNext", autoNext ? "1" : "0");
+  }, [autoNext]);
+
+  const toggleAutoReplay = () =>
+    setAutoReplay((v) => {
+      const nv = !v;
+      if (nv) setAutoNext(false); // mutually exclusive
+      return nv;
+    });
+  const toggleAutoNext = () =>
+    setAutoNext((v) => {
+      const nv = !v;
+      if (nv) setAutoReplay(false);
+      return nv;
+    });
 
   // English paragraph texts, parallel to the rendered paragraphs.
   const englishParaTexts = useMemo(() => splitParagraphs(translation), [translation]);
@@ -249,6 +318,7 @@ export default function StoryPlayer({
     releaseWakeLock();
     pointerRef.current = tokens.length;
     setSpokenCount(tokens.length); // whole story filled
+    handlePlaybackFinished();
   };
   const onSeeked = () => {
     if (studyRef.current.running) return;
@@ -338,7 +408,7 @@ export default function StoryPlayer({
     let next = s.p + 1;
     while (next < paraRanges.length && !paraRanges[next]) next++;
     if (next >= paraRanges.length) {
-      finishSequence();
+      finishSequence(true); // natural end → may auto-replay / auto-next
       return;
     }
     s.p = next;
@@ -361,13 +431,14 @@ export default function StoryPlayer({
     }
   };
 
-  const finishSequence = () => {
+  const finishSequence = (natural = false) => {
     studyRef.current.running = false;
     if (studyTimerRef.current) clearTimeout(studyTimerRef.current);
     studyTimerRef.current = null;
     stopLoop();
     setPlaying(false);
     releaseWakeLock();
+    if (natural) handlePlaybackFinished();
   };
 
   const stopSequence = () => {
@@ -434,6 +505,68 @@ export default function StoryPlayer({
     stopLoop();
     setPlaying(false);
     setStudyMode((m) => !m);
+  };
+
+  // ---------------- Playlist: auto-replay & auto-next ----------------
+  // Start the current item from the beginning in whatever mode applies.
+  const startCurrentPlayback = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    try {
+      a.currentTime = 0;
+    } catch {
+      /* not seekable yet */
+    }
+    if (isSentences) startSentences();
+    else if (studyMode) startStudy();
+    else a.play().catch(() => {});
+  };
+
+  // Fetch the next ready story's payload and swap it in WITHOUT navigating, so
+  // the audio element (and its iOS unlock) survives and autoplay keeps working.
+  const loadNext = async () => {
+    const idx = playlistIds.indexOf(playable.storyId);
+    const nextId = idx >= 0 ? playlistIds[idx + 1] : undefined;
+    if (!nextId) return; // end of the library
+    try {
+      const res = await fetch("/api/stories/play", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ storyId: nextId }),
+      });
+      const data = (await res.json()) as Partial<Playable> & { error?: string };
+      if (!res.ok || !data.storyId) return;
+      pendingAutoplayRef.current = true; // play once the new audio is ready
+      setPlayable({
+        storyId: data.storyId,
+        style: data.style ?? "story",
+        title: data.title ?? "",
+        topic: data.topic ?? "",
+        text: data.text ?? "",
+        tokens: data.tokens ?? [],
+        audioUrl: data.audioUrl ?? null,
+        translation: data.translation ?? "",
+        segments: data.segments ?? null,
+      });
+      // Keep the URL pointing at the now-playing item (refresh/regenerate target).
+      window.history.replaceState(null, "", `/${lang}/stories/${data.storyId}`);
+      window.scrollTo({ top: 0 });
+    } catch {
+      /* ignore — playlist just stops */
+    }
+  };
+
+  // Called when audio finishes naturally (normal end OR sequencer completion).
+  const handlePlaybackFinished = () => {
+    if (autoReplayRef.current) startCurrentPlayback();
+    else if (autoNextRef.current) loadNext();
+  };
+
+  // After an in-place swap, start playback once the new audio can play.
+  const onCanPlay = () => {
+    if (!pendingAutoplayRef.current) return;
+    pendingAutoplayRef.current = false;
+    startCurrentPlayback();
   };
 
   // Some browsers (notably iOS Safari) mis-read the duration of stitched audio
@@ -645,6 +778,11 @@ export default function StoryPlayer({
 
   return (
     <div className="story-player">
+      <div className="stories-head story-player-head">
+        <h2>{title}</h2>
+      </div>
+      {topic && topic !== title && <p className="story-topic-sub">{topic}</p>}
+
       {audioUrl ? (
         <>
           <div className="story-controls">
@@ -687,6 +825,7 @@ export default function StoryPlayer({
               onEnded={onEnded}
               onSeeked={onSeeked}
               onLoadedMetadata={onLoadedMetadata}
+              onCanPlay={onCanPlay}
             />
             {studyMode && !isSentences && (
               <span className="story-study-label">3-pass mode · Indonesian → English → Indonesian</span>
@@ -694,6 +833,28 @@ export default function StoryPlayer({
             {isSentences && (
               <span className="story-study-label">Sentences · Indonesian ×2</span>
             )}
+            <div className="story-loop-toggles">
+              <button
+                type="button"
+                className={`story-loop-btn${autoReplay ? " story-loop-on" : ""}`}
+                onClick={toggleAutoReplay}
+                aria-pressed={autoReplay}
+                title="Auto-replay this when it finishes"
+                aria-label="Auto-replay"
+              >
+                🔂
+              </button>
+              <button
+                type="button"
+                className={`story-loop-btn${autoNext ? " story-loop-on" : ""}`}
+                onClick={toggleAutoNext}
+                aria-pressed={autoNext}
+                title="Auto-play the next item — play the whole library as a playlist"
+                aria-label="Auto-play next"
+              >
+                ⏭
+              </button>
+            </div>
           </div>
 
           <div className="story-text">

@@ -104,21 +104,32 @@ export default async function StoryPage({
     audioUrl = signed?.signedUrl ?? null;
   }
 
+  // Ordered list of ready story ids for the "auto-play next" playlist (same
+  // newest-first order as the library).
+  const { data: idRows } = await supabase
+    .from("vocab_stories")
+    .select("id")
+    .eq("status", "ready")
+    .order("created_at", { ascending: false });
+  const playlistIds = (idRows ?? []).map((r) => (r as { id: string }).id);
+
   return (
     <main className="stories-wrap">
-      <div className="stories-head">
-        <h2>{story.title ?? story.topic}</h2>
-        {backLink}
-      </div>
-      <p className="story-topic-sub">{story.topic}</p>
+      <Link href={`/${lang}/stories`} className="stories-back-link stories-back-top">
+        ← Library
+      </Link>
       <StoryPlayer
         storyId={story.id}
         style={story.style ?? "story"}
+        initialTitle={story.title ?? story.topic}
+        topic={story.topic}
         text={story.story_text ?? ""}
         tokens={story.word_timings ?? []}
         audioUrl={audioUrl}
         translation={story.translation_en ?? ""}
         segments={story.segments}
+        playlistIds={playlistIds}
+        lang={lang}
       />
     </main>
   );
