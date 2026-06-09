@@ -7,6 +7,7 @@ export type StoryItem = {
   id: string;
   topic: string;
   status: string;
+  style: string | null;
   title: string | null;
   error: string | null;
   created_at: string;
@@ -15,6 +16,16 @@ export type StoryItem = {
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+const STYLE_META: Record<string, { icon: string; label: string }> = {
+  story: { icon: "📖", label: "Story" },
+  podcast: { icon: "🎙️", label: "Podcast" },
+  sentences: { icon: "🗂️", label: "Sentences" },
+};
+
+function styleMeta(style: string | null) {
+  return STYLE_META[style ?? "story"] ?? STYLE_META.story;
 }
 
 export default function StoriesList({ lang, initial }: { lang: string; initial: StoryItem[] }) {
@@ -123,7 +134,7 @@ function SwipeRow({
         {deleting ? "…" : "Delete"}
       </button>
       <div
-        className="swipe-content stories-item-link"
+        className={`swipe-content stories-item-link story-style-row-${story.style ?? "story"}`}
         style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform 0.2s ease" }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -133,6 +144,9 @@ function SwipeRow({
         tabIndex={0}
       >
         <div className="stories-item-main">
+          <span className={`story-style-chip story-style-${story.style ?? "story"}`}>
+            {styleMeta(story.style).icon} {styleMeta(story.style).label}
+          </span>
           <span className="stories-item-title">{story.title ?? story.topic}</span>
           <span className="stories-item-topic">{story.topic}</span>
           {story.status === "failed" && story.error && (
