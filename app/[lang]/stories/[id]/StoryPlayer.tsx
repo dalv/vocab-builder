@@ -1,9 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Token } from "../../../lib/stories/alignment";
 import { buildSentenceMap, splitParagraphs, splitSentences } from "../../../lib/stories/sentences";
+
+// Vertically position a fixed popup so it's fully on-screen: below the anchor
+// word if it fits, else above it, else clamped to the viewport (top first).
+function positionPopup(
+  node: HTMLDivElement | null,
+  anchorTop: number | undefined,
+  anchorBottom: number | undefined,
+) {
+  if (!node || anchorTop == null || anchorBottom == null) return;
+  const margin = 12;
+  const gap = 8;
+  const vh = window.innerHeight;
+  const h = node.offsetHeight;
+  let top: number;
+  if (anchorBottom + gap + h <= vh - margin) {
+    top = anchorBottom + gap; // fits below
+  } else if (anchorTop - gap - h >= margin) {
+    top = anchorTop - gap - h; // fits above
+  } else {
+    top = Math.max(margin, vh - margin - h); // too tall: pin so the top stays visible
+  }
+  node.style.top = `${top}px`;
+}
 
 type Piece =
   | { kind: "ws"; value: string }
@@ -106,21 +129,23 @@ export default function StoryPlayer({
   const [popup, setPopup] = useState<{
     id: string;
     en: string;
-    top: number;
+    anchorTop: number;
+    anchorBottom: number;
     left: number;
     width: number;
-    above: boolean;
   } | null>(null);
   const [explain, setExplain] = useState<{
     word: string;
-    top: number;
+    anchorTop: number;
+    anchorBottom: number;
     left: number;
     width: number;
-    above: boolean;
     loading: boolean;
     text: string;
     error: string;
   } | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const explainRef = useRef<HTMLDivElement>(null);
 
   // Number of words spoken so far. Words with index < spokenCount are filled
   // orange and STAY orange; the text progressively fills as the audio plays.
@@ -705,15 +730,16 @@ export default function StoryPlayer({
     return { id: info?.text ?? "", en: en || translation };
   };
 
-  // Place a popup near an element's rect, clamped to the viewport.
+  // Horizontal placement + the anchor's vertical bounds. Final vertical
+  // position is computed after render (once the popup's real height is known)
+  // by positionPopup, so a popup whose content grows can't run off-screen.
   const placeFrom = (rect: DOMRect) => {
     const vw = window.innerWidth;
     const width = Math.min(320, vw - 24);
     let left = rect.left;
     if (left + width > vw - 12) left = vw - 12 - width;
     if (left < 12) left = 12;
-    const above = rect.top > 220;
-    return { left, width, above, top: above ? rect.top - 8 : rect.bottom + 8 };
+    return { left, width, anchorTop: rect.top, anchorBottom: rect.bottom };
   };
 
   const onWordClick = (e: React.MouseEvent<HTMLSpanElement>, wordIndex: number) => {
@@ -754,10 +780,29 @@ export default function StoryPlayer({
     }
   };
 
+  // After each popup renders (and whenever its content changes size — e.g. the
+  // explanation replacing the "Thinking…" placeholder), clamp it fully into the
+  // viewport. Fixed-position popups can't be scrolled to, so an off-screen top
+  // would otherwise be unreachable.
+  useLayoutEffect(() => {
+    positionPopup(popupRef.current, popup?.anchorTop, popup?.anchorBottom);
+  }, [popup]);
+  useLayoutEffect(() => {
+    positionPopup(explainRef.current, explain?.anchorTop, explain?.anchorBottom);
+  }, [explain]);
+
   // Dismiss popups on scroll / resize / Escape so they can't sit stale.
   useEffect(() => {
     if (!popup && !explain) return;
-    const closeAll = () => {
+    const closeAll = (e?: Event) => {
+      // Don't dismiss when the scroll happens inside a popup itself (a long
+      // explanation scrolls internally).
+      if (
+        e?.target instanceof Node &&
+        (popupRef.current?.contains(e.target) || explainRef.current?.contains(e.target))
+      ) {
+        return;
+      }
       setExplain(null);
       setPopup(null);
     };
@@ -936,8 +981,9 @@ export default function StoryPlayer({
             }}
           />
           <div
-            className={`story-popup${popup.above ? " story-popup-above" : ""}`}
-            style={{ top: popup.top, left: popup.left, width: popup.width }}
+            ref={popupRef}
+            className="story-popup"
+            style={{ top: popup.anchorBottom + 8, left: popup.left, width: popup.width }}
             role="dialog"
           >
             {popup.id && (
@@ -966,8 +1012,9 @@ export default function StoryPlayer({
         <>
           <div className="story-popup-backdrop story-popup-backdrop-2" onClick={() => setExplain(null)} />
           <div
-            className={`story-popup story-explain${explain.above ? " story-popup-above" : ""}`}
-            style={{ top: explain.top, left: explain.left, width: explain.width }}
+            ref={explainRef}
+            className="story-popup story-explain"
+            style={{ top: explain.anchorBottom + 8, left: explain.left, width: explain.width }}
             role="dialog"
           >
             <p className="story-explain-word">{explain.word}</p>

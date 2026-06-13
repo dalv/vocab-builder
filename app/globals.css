@@ -1477,8 +1477,9 @@ header { position: relative; }
   box-shadow: 0 6px 24px rgba(44, 36, 22, 0.18);
   padding: 12px 14px;
   max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
 }
-.story-popup-above { transform: translateY(-100%); }
 .story-popup-id {
   font-size: 14px;
   font-weight: 600;
