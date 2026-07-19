@@ -38,6 +38,9 @@ type Segment = {
   // Sentences style: the audio [start,end] of this sentence's spoken English.
   engStart?: number;
   engEnd?: number;
+  // Sentences style: how many times to read each sentence (defaults to 2 when
+  // absent, for back-compat). Carried on segments[0] as a lightweight meta bag.
+  repeat?: number;
 };
 
 /**
@@ -205,6 +208,13 @@ export default function StoryPlayer({
     );
     return ranges.some(Boolean) ? ranges : null;
   }, [isSentences, segments]);
+
+  // Sentences style: how many times to read each sentence. Stored on
+  // segments[0].repeat; defaults to 2 (older blocks read each sentence twice).
+  const sentenceRepeat = useMemo(() => {
+    const r = Array.isArray(segments) ? segments[0]?.repeat : undefined;
+    return typeof r === "number" && r >= 1 ? Math.floor(r) : 2;
+  }, [segments]);
 
   // Audio time range [start, end] for each rendered paragraph, from word timings.
   const paraRanges = useMemo(() => {
@@ -512,10 +522,10 @@ export default function StoryPlayer({
 
   const startStudy = () => startSequence(["id", "eng-speak", "id"], 0);
 
-  // Sentences: read the Indonesian twice per sentence, with a pause between
-  // sentences. (The English is shown as text only — not read aloud.)
+  // Sentences: read the Indonesian `sentenceRepeat` times per sentence (default
+  // 2), with a pause between sentences. (English is shown as text only.)
   const startSentences = () => {
-    startSequence(["id", "id"], 700);
+    startSequence(Array<Phase>(sentenceRepeat).fill("id"), 700);
   };
 
   const toggleStudyMode = () => {
@@ -905,7 +915,7 @@ export default function StoryPlayer({
           <div className="story-text">
             {paragraphs.map((para, pi) => (
               <p className={`story-para${isSentences ? " story-sentence" : ""}`} key={pi}>
-                {segments && segments[pi] && (
+                {!isSentences && segments && segments[pi] && (
                   <span className={`story-speaker story-speaker-${segments[pi].gender}`}>
                     {segments[pi].speaker}
                   </span>
