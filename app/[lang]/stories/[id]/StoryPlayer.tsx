@@ -307,9 +307,15 @@ export default function StoryPlayer({
     const rect = el.getBoundingClientRect();
     const vh = window.innerHeight;
     const bottomBar = 104; // space reserved by the fixed controls (desktop + mobile)
-    const focus = vh * 0.25; // where we park the current line after scrolling
-    const lowerBound = vh * 0.50 - bottomBar; // too low → scroll
-    const upperBound = vh * 0.1; // too high (e.g. after rewind) → scroll
+    // Measure against the READABLE area (viewport minus the controls), not the
+    // raw viewport — subtracting the bar from a 50% mark used to pull the
+    // trigger up to ~38% of the screen, so the highlight scrolled every ~2
+    // lines. Let it run a bit past the middle of the readable area instead, and
+    // park it higher, so many more lines pass between scrolls.
+    const readable = vh - bottomBar;
+    const focus = readable * 0.22; // where we park the current line after scrolling
+    const lowerBound = readable * 0.62; // a bit past halfway → scroll
+    const upperBound = readable * 0.08; // too high (e.g. after rewind) → scroll
     if (rect.top <= lowerBound && rect.top >= upperBound) return;
     const now = performance.now();
     if (now - lastScrollRef.current < 500) return; // mid-animation cooldown
